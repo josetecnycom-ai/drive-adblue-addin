@@ -23,7 +23,7 @@
         <h3>⛽ Registro AdBlue</h3>
         
         <div id="vehicleInfo" class="info">
-            ⏳ Buscando vehículo...
+            ⏳ Detectando vehículo...
         </div>
         
         <label for="liters">Litros repostados:</label>
@@ -33,10 +33,9 @@
         <p id="msg"></p>
     </div>
 
-    <div id="debug" class="debug-info">Cargando script...</div>
+    <div id="debug" class="debug-info">Cargando v3.0...</div>
 
     <script>
-        // Utilidad para mostrar logs en la pantalla del móvil
         function logDebug(text) {
             const debugEl = document.getElementById('debug');
             const time = new Date().toLocaleTimeString();
@@ -44,104 +43,99 @@
             console.log(text);
         }
 
-        /**
-         * NOTA IMPORTANTE:
-         * Asegúrate de que en tu JSON de MyGeotab el "name" sea: "registroAdblue"
-         */
         geotab.addin.registroAdblue = function (api, state) {
             
-            // Referencias al DOM
             const vehicleEl = document.getElementById('vehicleInfo');
             const saveBtn = document.getElementById('saveBtn');
             const msg = document.getElementById('msg');
             const litersInput = document.getElementById('liters');
-            let currentDevice = null;
+            
+            // Variable global para guardar el ID del vehículo detectado
+            let currentDeviceId = null;
 
             return {
                 initialize: function (api, state, callback) {
-                    logDebug("Inicializando Add-in...");
-                    logDebug("Estado recibido: " + JSON.stringify(state));
-
-                    // 1. INTENTO DIRECTO: Buscar vehículo en el objeto state
-                    if (state && state.device) {
-                        setVehicle(state.device);
-                    } else if (state && state.activeDevice) {
-                        setVehicle(state.activeDevice);
+                    logDebug("Inicializando...");
+                    
+                    // 1. Detección del Dispositivo (PRIORIDAD AL ID)
+                    // En DriveAppLink, state.device viene solo con ID: {id: "b137"}
+                    if (state && state.device && state.device.id) {
+                        handleDeviceFound(state.device.id, state.device.name, api);
+                    } else if (state && state.activeDevice && state.activeDevice.id) {
+                        handleDeviceFound(state.activeDevice.id, state.activeDevice.name, api);
                     } else {
-                        // 2. INTENTO MANUAL: Si state.device falla, preguntamos a la API quién es el usuario
-                        logDebug("Vehículo no encontrado en state. Buscando vía API...");
+                        logDebug("No hay ID en state.device. Buscando por API...");
                         fetchDeviceFromApi(api);
                     }
 
-                    // Configurar el botón de guardar
                     saveBtn.addEventListener('click', function() {
-                        handleSave(api);
+                        saveData(api);
                     });
 
                     callback();
                 },
 
                 focus: function (api, state) {
-                    // Refrescar si el usuario cambia de vehículo y vuelve
-                    logDebug("Focus event: refrescando...");
-                    if (state && state.device) {
-                        setVehicle(state.device);
+                    // Si cambia el contexto, actualizamos
+                    if (state && state.device && state.device.id) {
+                         // Solo actualizamos si el ID es diferente
+                         if (state.device.id !== currentDeviceId) {
+                             handleDeviceFound(state.device.id, state.device.name, api);
+                         }
                     }
                 }
             };
 
-            // --- Funciones Auxiliares ---
+            // --- Funciones Lógicas ---
 
-            function setVehicle(device) {
-                if (!device || !device.id) return;
+            function handleDeviceFound(id, name, api) {
+                currentDeviceId = id;
+                logDebug("ID detectado: " + id);
                 
-                currentDevice = device;
-                logDebug("Vehículo detectado: " + device.name + " (" + device.id + ")");
-                
-                vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${device.name}<br><small>ID: ${device.id}</small>`;
-                vehicleEl.style.borderLeftColor = "green";
-                
+                // Habilitamos el botón INMEDIATAMENTE porque ya tenemos el ID necesario para guardar
                 saveBtn.disabled = false;
                 saveBtn.innerText = "ENVIAR REGISTRO";
+                
+                // Mostramos info temporal mientras buscamos el nombre real
+                const displayName = name || "ID: " + id;
+                vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${displayName}<br><small>✅ Listo para registrar</small>`;
+                vehicleEl.style.borderLeftColor = "green";
+
+                // Si no tenemos el nombre (caso DriveAppLink), lo pedimos a la API para que quede bonito
+                if (!name) {
+                    api.call("Get", {
+                        typeName: "Device",
+                        search: { id: id }
+                    }, function(results) {
+                        if (results && results.length > 0) {
+                            vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${results[0].name}<br><small>ID: ${id}</small>`;
+                        }
+                    });
+                }
             }
 
             function fetchDeviceFromApi(api) {
-                // Obtenemos la sesión para saber quién es el conductor y buscar su vehículo actual
+                // Fallback extremo si falla el state
                 api.getSession(function(session) {
-                    logDebug("Sesión obtenida. Usuario: " + session.userName);
-                    
-                    // Buscamos el DeviceStatusInfo para ver qué conduce este usuario
-                    // Ojo: Esto es un truco para obtener el dispositivo si 'state' falla
                     api.call("Get", {
                         typeName: "Device",
-                        search: {
-                            fromDate: new Date().toISOString() // Trae activos recientes
-                        },
+                        search: { fromDate: new Date().toISOString() },
                         resultsLimit: 1
                     }, function(devices) {
                         if (devices && devices.length > 0) {
-                            logDebug("Vehículo encontrado por API (Fallback)");
-                            setVehicle(devices[0]);
+                            handleDeviceFound(devices[0].id, devices[0].name, api);
                         } else {
-                            logDebug("ERROR CRÍTICO: No se pudo identificar ningún vehículo.");
-                            vehicleEl.innerHTML = "❌ No se detecta vehículo. Seleccione uno en Drive.";
-                            vehicleEl.style.backgroundColor = "#ffdddd";
+                            vehicleEl.innerHTML = "❌ No se detecta vehículo.";
+                            logDebug("API tampoco devolvió vehículos.");
                         }
-                    }, function(err) {
-                        logDebug("Error API buscando dispositivo: " + err);
                     });
                 });
             }
 
-            function handleSave(api) {
+            function saveData(api) {
                 const liters = litersInput.value;
                 if (!liters || liters <= 0) {
-                    alert("Introduce una cantidad válida");
-                    return;
-                }
-
-                if (!currentDevice) {
-                    alert("Error: No hay vehículo seleccionado");
+                    alert("Introduce los litros.");
                     return;
                 }
 
@@ -152,26 +146,26 @@
                 const logRecord = {
                     typeName: "MaintenanceRecord",
                     entity: {
-                        device: { id: currentDevice.id },
-                        maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" }, // Usamos ID genérico seguro
-                        notes: "AdBlue: " + liters + " Litros (App)",
+                        device: { id: currentDeviceId }, // Usamos el ID capturado
+                        maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" }, // ID Genérico de prueba
+                        notes: "AdBlue Repostado: " + liters + " Litros",
                         dateTime: new Date().toISOString()
                     }
                 };
 
                 api.call("Add", logRecord, function(result) {
                     msg.style.color = "green";
-                    msg.innerText = "✅ ¡Guardado Correctamente!";
+                    msg.innerText = "✅ Guardado correctamente";
                     litersInput.value = "";
                     saveBtn.innerText = "ENVIAR OTRO";
                     saveBtn.disabled = false;
-                    logDebug("Registro guardado ID: " + result);
                 }, function(err) {
                     msg.style.color = "red";
-                    msg.innerText = "❌ Error: " + err.message;
+                    // Mostramos el error exacto en pantalla
+                    msg.innerText = "❌ Error: " + (err.message || err.name || JSON.stringify(err));
+                    console.error(err);
                     saveBtn.innerText = "REINTENTAR";
                     saveBtn.disabled = false;
-                    logDebug("Error guardando: " + JSON.stringify(err));
                 });
             }
         };
