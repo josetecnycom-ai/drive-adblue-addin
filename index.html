@@ -4,67 +4,67 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f7f9; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .info { background: #eef4fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9em; border-left: 4px solid #004a99; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #004a99; color: white; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        body { font-family: sans-serif; padding: 15px; background: #f4f7f9; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 450px; margin: auto; }
+        .info { background: #eef4fa; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 5px solid #004a99; }
+        input { width: 100%; padding: 15px; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; }
+        button { width: 100%; padding: 15px; background: #004a99; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         button:disabled { background: #ccc; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h3>⛽ Registro AdBlue</h3>
-        <div id="vInfo" class="info">Detectando vehículo...</div>
-        <input type="number" id="liters" placeholder="Litros AdBlue" step="0.1">
-        <button id="btn" disabled>ESPERANDO VEHÍCULO...</button>
+        <h3>⛽ Registro de AdBlue</h3>
+        <div id="vInfo" class="info">Buscando vehículo...</div>
+        <input type="number" id="liters" placeholder="Litros de AdBlue" step="0.1">
+        <button id="saveBtn" disabled>CARGANDO...</button>
         <p id="msg" style="text-align:center; font-weight:bold;"></p>
     </div>
 
     <script>
-        // Nombre sincronizado con el JSON: adblue_v7
-        geotab.addin.adblue_v7 = function (api, state) {
+        // Sincronizado con el nombre 'adblue_final' del JSON
+        geotab.addin.adblue_final = function (api, state) {
             return {
                 initialize: function (api, state, callback) {
                     const vInfo = document.getElementById('vInfo');
-                    const btn = document.getElementById('btn');
-                    const msg = document.getElementById('msg');
+                    const saveBtn = document.getElementById('saveBtn');
                     
-                    // Extraemos el ID b137 que vemos en tus capturas
-                    const device = state.device || state.activeDevice;
-                    
+                    // Extraemos el ID del dispositivo del estado de la aplicación
+                    const device = state.device || (state.pageState && state.pageState.device);
+
                     if (device && device.id) {
-                        btn.disabled = false;
-                        btn.innerText = "ENVIAR REGISTRO";
-                        vInfo.innerHTML = "<strong>Vehículo:</strong> Detectado<br>ID: " + device.id;
+                        saveBtn.disabled = false;
+                        saveBtn.innerText = "ENVIAR REGISTRO";
+                        vInfo.innerHTML = "<strong>Vehículo activo:</strong> " + (device.name || "Detectado") + "<br>ID: " + device.id;
+                    } else {
+                        vInfo.innerHTML = "⚠️ No se detecta vehículo en Geotab Drive.";
                     }
 
-                    btn.addEventListener('click', function() {
-                        const litros = document.getElementById('liters').value;
-                        if (!litros) return alert("Indica los litros");
+                    saveBtn.addEventListener('click', function() {
+                        const liters = document.getElementById('liters').value;
+                        if (!liters) return alert("Indica los litros");
 
-                        btn.disabled = true;
-                        btn.innerText = "⏳ Guardando...";
+                        saveBtn.disabled = true;
+                        saveBtn.innerText = "⏳ Guardando...";
 
+                        // Al abrirse desde el icono de Home, 'Add' tendrá permisos
                         api.call("Add", {
                             typeName: "MaintenanceRecord",
                             entity: {
                                 device: { id: device.id },
                                 maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" },
-                                notes: "AdBlue: " + litros + "L",
+                                notes: "AdBlue: " + liters + "L",
                                 dateTime: new Date().toISOString()
                             }
                         }, function() {
-                            msg.innerHTML = "✅ Guardado";
-                            msg.style.color = "green";
+                            document.getElementById('msg').innerHTML = "✅ ¡Guardado!";
                             document.getElementById('liters').value = "";
-                            btn.disabled = false;
-                            btn.innerText = "ENVIAR OTRO";
+                            saveBtn.disabled = false;
+                            saveBtn.innerText = "ENVIAR OTRO";
                         }, function(err) {
-                            // Capturamos el error para ver por qué falla el 'Add'
-                            alert("Error: " + (err.message || "Falta permiso de mantenimiento"));
-                            btn.disabled = false;
-                            btn.innerText = "REINTENTAR";
+                            alert("Error al guardar: " + (err.message || "Permisos denegados"));
+                            saveBtn.disabled = false;
+                            saveBtn.innerText = "REINTENTAR";
                         });
                     });
                     callback();
