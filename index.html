@@ -1,50 +1,67 @@
-geotab.addin.registroAdblue = function (api, state) {
-    const vehicleEl = document.getElementById('vehicleInfo');
-    const saveBtn = document.getElementById('saveBtn');
-    const litersInput = document.getElementById('liters');
-    const msgEl = document.getElementById('msg');
-    let currentId = null;
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro AdBlue</title>
+    <style>
+        body { font-family: sans-serif; padding: 15px; background-color: #f4f7f9; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .info { background: #eef4fa; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 5px solid #004a99; }
+        input { width: 100%; padding: 15px; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; }
+        button { width: 100%; padding: 15px; font-size: 16px; background: #004a99; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h3>⛽ Registro AdBlue</h3>
+        <div id="vehicleInfo" class="info">Detectando vehículo...</div>
+        <input type="number" id="liters" placeholder="Litros" step="0.1">
+        <button id="saveBtn" disabled>Cargando...</button>
+        <p id="msg"></p>
+    </div>
 
-    return {
-        initialize: function (api, state, callback) {
-            // Extraer ID del vehículo de las trazas de estado
-            const device = state.device || state.activeDevice;
-            if (device && device.id) {
-                currentId = device.id;
-                saveBtn.disabled = false;
-                saveBtn.innerText = "ENVIAR REGISTRO";
-                vehicleEl.innerHTML = `<strong>Vehículo detectado</strong><br>ID: ${currentId}`;
-            }
-
-            saveBtn.addEventListener('click', function() {
-                const liters = litersInput.value;
-                if (!liters || liters <= 0) return alert("Introduce litros");
-
-                saveBtn.disabled = true;
-                saveBtn.innerText = "⏳ Guardando...";
-
-                // Usamos directamente el objeto api pasado por el constructor
-                api.call("Add", {
-                    typeName: "MaintenanceRecord",
-                    entity: {
-                        device: { id: currentId },
-                        maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" },
-                        notes: "AdBlue: " + liters + "L",
-                        dateTime: new Date().toISOString()
+    <script>
+        // EL NOMBRE DEBE SER EXACTAMENTE IGUAL AL DEL JSON
+        geotab.addin.addinAdblueV5 = function (api, state) {
+            return {
+                initialize: function (api, state, callback) {
+                    const vehicleEl = document.getElementById('vehicleInfo');
+                    const saveBtn = document.getElementById('saveBtn');
+                    
+                    // Priorizamos el ID detectado en tus capturas (b137)
+                    const device = state.device || state.activeDevice;
+                    if (device && device.id) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerText = "ENVIAR REGISTRO";
+                        vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${device.name || 'Detectado'}<br><small>ID: ${device.id}</small>`;
                     }
-                }, function(result) {
-                    msgEl.innerHTML = "✅ Guardado correctamente";
-                    litersInput.value = "";
-                    saveBtn.disabled = false;
-                    saveBtn.innerText = "ENVIAR OTRO";
-                }, function(err) {
-                    // Si vuelve a salir 'method Add not found', es restricción del Path
-                    alert("Error Geotab: " + (err.message || "Método Add restringido en este menú."));
-                    saveBtn.disabled = false;
-                    saveBtn.innerText = "REINTENTAR";
-                });
-            });
-            callback();
-        }
-    };
-};
+
+                    saveBtn.addEventListener('click', function() {
+                        const liters = document.getElementById('liters').value;
+                        saveBtn.disabled = true;
+                        
+                        api.call("Add", {
+                            typeName: "MaintenanceRecord",
+                            entity: {
+                                device: { id: device.id },
+                                maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" },
+                                notes: "AdBlue: " + liters + "L",
+                                dateTime: new Date().toISOString()
+                            }
+                        }, function() {
+                            alert("✅ Guardado!");
+                            saveBtn.disabled = false;
+                        }, function(err) {
+                            alert("❌ Error: " + (err.message || "Permisos insuficientes"));
+                            saveBtn.disabled = false;
+                        });
+                    });
+                    callback();
+                }
+            };
+        };
+    </script>
+</body>
+</html>
