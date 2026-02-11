@@ -2,71 +2,66 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Registro AdBlue</title>
+    <title>AdBlue</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f7f9; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .info { background: #eef4fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; border-left: 4px solid #004a99; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #004a99; color: white; border: none; border-radius: 6px; font-weight: bold; }
-        button:disabled { background: #ccc; }
+        body { font-family: sans-serif; padding: 15px; text-align: center; }
+        .box { border: 1px solid #ccc; padding: 20px; border-radius: 10px; background: white; }
+        input { width: 80%; padding: 10px; margin: 10px 0; font-size: 16px; }
+        button { width: 80%; padding: 15px; background: #004a99; color: white; border: none; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h3>⛽ Registro AdBlue</h3>
-        <div id="vInfo" class="info">Esperando datos de Drive...</div>
-        <input type="number" id="liters" placeholder="Litros repostados">
-        <button id="saveBtn" disabled>CARGANDO...</button>
-        <p id="status" style="text-align:center; font-weight:bold;"></p>
+    <div class="box">
+        <h3>Registro AdBlue</h3>
+        <p id="devId">Esperando vehículo...</p>
+        <input type="number" id="litros" placeholder="Cantidad litros">
+        <button id="btn" disabled>CARGANDO...</button>
     </div>
 
     <script>
-        // Sincronizado con el nombre 'adblue_final' del JSON
-        geotab.addin.adblue_final = function (api, state) {
-            let activeDeviceId = null;
-
+        // EL NOMBRE DEBE SER EXACTAMENTE adblue_new
+        geotab.addin.adblue_new = function (api, state) {
+            let deviceId = null;
             return {
                 initialize: function (api, state, callback) {
-                    const btn = document.getElementById('saveBtn');
-                    const vInfo = document.getElementById('vInfo');
+                    const btn = document.getElementById('btn');
+                    const devTxt = document.getElementById('devId');
                     
-                    // Extraemos el ID b137 que confirmamos que recibes
+                    // Capturamos el ID b137 que confirmamos que recibes
                     const device = state.device || state.activeDevice;
 
                     if (device && device.id) {
-                        activeDeviceId = device.id;
+                        deviceId = device.id;
                         btn.disabled = false;
-                        btn.innerText = "ENVIAR REGISTRO";
-                        vInfo.innerHTML = "<strong>Vehículo:</strong> " + activeDeviceId;
+                        btn.innerText = "GUARDAR";
+                        devTxt.innerText = "Vehículo: " + deviceId;
                     }
 
-                    btn.addEventListener('click', function() {
-                        const litros = document.getElementById('liters').value;
-                        if (!litros) return alert("Indica los litros");
-
+                    btn.onclick = function() {
+                        const val = document.getElementById('litros').value;
+                        if (!val) return;
                         btn.disabled = true;
+                        
                         api.call("Add", {
                             typeName: "MaintenanceRecord",
                             entity: {
-                                device: { id: activeDeviceId },
+                                device: { id: deviceId },
                                 maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" },
-                                notes: "AdBlue: " + litros + "L",
+                                notes: "AdBlue: " + val + "L",
                                 dateTime: new Date().toISOString()
                             }
-                        }, function() {
-                            document.getElementById('status').innerText = "✅ Guardado";
-                            document.getElementById('liters').value = "";
-                            btn.disabled = false;
-                        }, function(err) {
-                            alert("Error: " + err.message);
+                        }, () => {
+                            alert("¡Guardado!");
+                            location.reload();
+                        }, (e) => {
+                            alert("Error: " + e.message);
                             btn.disabled = false;
                         });
-                    });
+                    };
                     callback();
                 },
-                focus: function() {}, // Requerido por el SDK de Drive
-                blur: function() {}   // Requerido por el SDK de Drive
+                focus: function() {}, // Obligatorio para visibilidad en Drive
+                blur: function() {}   // Obligatorio para visibilidad en Drive
             };
         };
     </script>
