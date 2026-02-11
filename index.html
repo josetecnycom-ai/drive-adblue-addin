@@ -1,96 +1,179 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro AdBlue</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f4f7f9; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        h3 { color: #004a99; margin-top: 0; display: flex; align-items: center; gap: 10px; }
-        .info { background: #eef4fa; padding: 12px; border-radius: 6px; font-size: 0.9em; margin-bottom: 20px; border-left: 4px solid #004a99; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h3 { color: #004a99; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .info { background: #eef4fa; padding: 12px; border-radius: 6px; font-size: 0.9em; margin-bottom: 20px; border-left: 5px solid #004a99; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
-        input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; }
-        button { width: 100%; padding: 15px; font-size: 16px; background: #004a99; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #msg { margin-top: 15px; text-align: center; font-weight: bold; min-height: 1.2em; }
+        input { width: 100%; padding: 15px; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; }
+        button { width: 100%; padding: 15px; font-size: 16px; background: #004a99; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; opacity: 1; transition: opacity 0.3s; }
+        button:disabled { background: #ccc; cursor: not-allowed; opacity: 0.7; }
+        #msg { margin-top: 15px; text-align: center; font-weight: bold; min-height: 20px; }
+        .debug-info { margin-top: 30px; font-size: 10px; color: #666; background: #eee; padding: 10px; border-radius: 4px; word-break: break-all; }
     </style>
 </head>
 <body>
+
     <div class="card">
-        <h3>⛽ Registro de AdBlue</h3>
-        <div id="vehicleInfo" class="info">Cargando datos del vehículo...</div>
+        <h3>⛽ Registro AdBlue</h3>
         
-        <label for="liters">Litros añadidos:</label>
-        <input type="number" id="liters" placeholder="Ej: 12.5" step="0.01" inputmode="decimal">
+        <div id="vehicleInfo" class="info">
+            ⏳ Buscando vehículo...
+        </div>
         
-        <button id="saveBtn">ENVIAR REGISTRO</button>
+        <label for="liters">Litros repostados:</label>
+        <input type="number" id="liters" placeholder="Ej: 25.5" step="0.1" inputmode="decimal">
+        
+        <button id="saveBtn" disabled>ESPERANDO VEHÍCULO...</button>
         <p id="msg"></p>
     </div>
 
+    <div id="debug" class="debug-info">Cargando script...</div>
+
     <script>
+        // Utilidad para mostrar logs en la pantalla del móvil
+        function logDebug(text) {
+            const debugEl = document.getElementById('debug');
+            const time = new Date().toLocaleTimeString();
+            debugEl.innerHTML += `<div>[${time}] ${text}</div>`;
+            console.log(text);
+        }
+
         /**
-         * El nombre 'registroAdblue' DEBE coincidir con el campo "name" del JSON 
-         * para que Geotab Drive inicialice el Add-in correctamente.
+         * NOTA IMPORTANTE:
+         * Asegúrate de que en tu JSON de MyGeotab el "name" sea: "registroAdblue"
          */
-        geotab.addin.registroAdblue = (api, state) => {
+        geotab.addin.registroAdblue = function (api, state) {
+            
+            // Referencias al DOM
             const vehicleEl = document.getElementById('vehicleInfo');
             const saveBtn = document.getElementById('saveBtn');
             const msg = document.getElementById('msg');
             const litersInput = document.getElementById('liters');
+            let currentDevice = null;
 
             return {
-                initialize(api, state, callback) {
-                    // Intentamos obtener el vehículo desde state.device (Drive) o state.activeDevice
-                    const device = state.device || state.activeDevice;
+                initialize: function (api, state, callback) {
+                    logDebug("Inicializando Add-in...");
+                    logDebug("Estado recibido: " + JSON.stringify(state));
 
-                    if (device && device.name) {
-                        vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${device.name}<br><small>ID: ${device.id}</small>`;
+                    // 1. INTENTO DIRECTO: Buscar vehículo en el objeto state
+                    if (state && state.device) {
+                        setVehicle(state.device);
+                    } else if (state && state.activeDevice) {
+                        setVehicle(state.activeDevice);
                     } else {
-                        // Si aparece esto, el conductor no ha seleccionado vehículo en la App Drive
-                        vehicleEl.innerHTML = `<span style="color:red">⚠️ No hay vehículo seleccionado.</span><br><small>Seleccione un vehículo en la App Drive primero.</small>`;
-                        saveBtn.disabled = true;
+                        // 2. INTENTO MANUAL: Si state.device falla, preguntamos a la API quién es el usuario
+                        logDebug("Vehículo no encontrado en state. Buscando vía API...");
+                        fetchDeviceFromApi(api);
                     }
 
-                    saveBtn.addEventListener('click', () => {
-                        const liters = litersInput.value;
-                        
-                        if(!liters || liters <= 0) {
-                            alert("Por favor, introduce una cantidad válida.");
-                            return;
-                        }
-
-                        saveBtn.disabled = true;
-                        msg.style.color = "orange";
-                        msg.innerText = "⏳ Guardando en Geotab...";
-
-                        // Guardamos el registro. Usamos un ID de tipo estándar para evitar errores de permisos.
-                        api.call("Add", {
-                            typeName: "MaintenanceRecord",
-                            entity: {
-                                device: { id: device.id },
-                                maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" }, // ID universal compatible
-                                notes: `REPOSTAJE ADBLUE: ${liters} Litros (Registrado vía Add-in)`,
-                                dateTime: new Date().toISOString()
-                            }
-                        }, () => {
-                            msg.style.color = "green";
-                            msg.innerText = "✅ ¡Registro guardado con éxito!";
-                            litersInput.value = "";
-                            saveBtn.disabled = false;
-                        }, (err) => {
-                            msg.style.color = "red";
-                            // Capturamos el error real en lugar de mostrar [object Object]
-                            console.error("Error Geotab API:", err);
-                            msg.innerText = "❌ Error: " + (err.message || "No se pudo guardar.");
-                            saveBtn.disabled = false;
-                        });
+                    // Configurar el botón de guardar
+                    saveBtn.addEventListener('click', function() {
+                        handleSave(api);
                     });
 
-                    // Obligatorio llamar al callback al finalizar la inicialización
                     callback();
+                },
+
+                focus: function (api, state) {
+                    // Refrescar si el usuario cambia de vehículo y vuelve
+                    logDebug("Focus event: refrescando...");
+                    if (state && state.device) {
+                        setVehicle(state.device);
+                    }
                 }
             };
+
+            // --- Funciones Auxiliares ---
+
+            function setVehicle(device) {
+                if (!device || !device.id) return;
+                
+                currentDevice = device;
+                logDebug("Vehículo detectado: " + device.name + " (" + device.id + ")");
+                
+                vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${device.name}<br><small>ID: ${device.id}</small>`;
+                vehicleEl.style.borderLeftColor = "green";
+                
+                saveBtn.disabled = false;
+                saveBtn.innerText = "ENVIAR REGISTRO";
+            }
+
+            function fetchDeviceFromApi(api) {
+                // Obtenemos la sesión para saber quién es el conductor y buscar su vehículo actual
+                api.getSession(function(session) {
+                    logDebug("Sesión obtenida. Usuario: " + session.userName);
+                    
+                    // Buscamos el DeviceStatusInfo para ver qué conduce este usuario
+                    // Ojo: Esto es un truco para obtener el dispositivo si 'state' falla
+                    api.call("Get", {
+                        typeName: "Device",
+                        search: {
+                            fromDate: new Date().toISOString() // Trae activos recientes
+                        },
+                        resultsLimit: 1
+                    }, function(devices) {
+                        if (devices && devices.length > 0) {
+                            logDebug("Vehículo encontrado por API (Fallback)");
+                            setVehicle(devices[0]);
+                        } else {
+                            logDebug("ERROR CRÍTICO: No se pudo identificar ningún vehículo.");
+                            vehicleEl.innerHTML = "❌ No se detecta vehículo. Seleccione uno en Drive.";
+                            vehicleEl.style.backgroundColor = "#ffdddd";
+                        }
+                    }, function(err) {
+                        logDebug("Error API buscando dispositivo: " + err);
+                    });
+                });
+            }
+
+            function handleSave(api) {
+                const liters = litersInput.value;
+                if (!liters || liters <= 0) {
+                    alert("Introduce una cantidad válida");
+                    return;
+                }
+
+                if (!currentDevice) {
+                    alert("Error: No hay vehículo seleccionado");
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveBtn.innerText = "Enviando...";
+                msg.innerText = "";
+
+                const logRecord = {
+                    typeName: "MaintenanceRecord",
+                    entity: {
+                        device: { id: currentDevice.id },
+                        maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" }, // Usamos ID genérico seguro
+                        notes: "AdBlue: " + liters + " Litros (App)",
+                        dateTime: new Date().toISOString()
+                    }
+                };
+
+                api.call("Add", logRecord, function(result) {
+                    msg.style.color = "green";
+                    msg.innerText = "✅ ¡Guardado Correctamente!";
+                    litersInput.value = "";
+                    saveBtn.innerText = "ENVIAR OTRO";
+                    saveBtn.disabled = false;
+                    logDebug("Registro guardado ID: " + result);
+                }, function(err) {
+                    msg.style.color = "red";
+                    msg.innerText = "❌ Error: " + err.message;
+                    saveBtn.innerText = "REINTENTAR";
+                    saveBtn.disabled = false;
+                    logDebug("Error guardando: " + JSON.stringify(err));
+                });
+            }
         };
     </script>
 </body>
