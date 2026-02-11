@@ -6,45 +6,54 @@
     <title>Registro AdBlue</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f4f7f9; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h3 { color: #004a99; margin-top: 0; }
-        .info { background: #eef4fa; padding: 10px; border-radius: 6px; font-size: 0.9em; margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        h3 { color: #004a99; margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        .info { background: #eef4fa; padding: 12px; border-radius: 6px; font-size: 0.9em; margin-bottom: 20px; border-left: 4px solid #004a99; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
         input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; }
-        button { width: 100%; padding: 15px; font-size: 16px; background: #004a99; color: white; border: none; border-radius: 8px; font-weight: bold; }
-        button:disabled { background: #ccc; }
-        #msg { margin-top: 15px; text-align: center; font-weight: bold; }
+        button { width: 100%; padding: 15px; font-size: 16px; background: #004a99; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #msg { margin-top: 15px; text-align: center; font-weight: bold; min-height: 1.2em; }
     </style>
 </head>
 <body>
     <div class="card">
         <h3>⛽ Registro de AdBlue</h3>
-        <div id="vehicleInfo" class="info">Obteniendo información del vehículo...</div>
+        <div id="vehicleInfo" class="info">Cargando datos del vehículo...</div>
         
-        <label for="liters">Litros de AdBlue añadidos:</label>
-        <input type="number" id="liters" placeholder="0.00" step="0.01" inputmode="decimal">
+        <label for="liters">Litros añadidos:</label>
+        <input type="number" id="liters" placeholder="Ej: 12.5" step="0.01" inputmode="decimal">
         
         <button id="saveBtn">ENVIAR REGISTRO</button>
         <p id="msg"></p>
     </div>
 
     <script>
-        // Esta función es la que Geotab llama automáticamente
+        /**
+         * El nombre 'registroAdblue' DEBE coincidir con el campo "name" del JSON 
+         * para que Geotab Drive inicialice el Add-in correctamente.
+         */
         geotab.addin.registroAdblue = (api, state) => {
             const vehicleEl = document.getElementById('vehicleInfo');
             const saveBtn = document.getElementById('saveBtn');
             const msg = document.getElementById('msg');
+            const litersInput = document.getElementById('liters');
 
             return {
                 initialize(api, state, callback) {
-                    // Detectamos el vehículo actual del login del conductor
-                    const device = state.device;
-                    if (device) {
-                        vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${device.name}<br><strong>ID:</strong> ${device.id}`;
+                    // Intentamos obtener el vehículo desde state.device (Drive) o state.activeDevice
+                    const device = state.device || state.activeDevice;
+
+                    if (device && device.name) {
+                        vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${device.name}<br><small>ID: ${device.id}</small>`;
+                    } else {
+                        // Si aparece esto, el conductor no ha seleccionado vehículo en la App Drive
+                        vehicleEl.innerHTML = `<span style="color:red">⚠️ No hay vehículo seleccionado.</span><br><small>Seleccione un vehículo en la App Drive primero.</small>`;
+                        saveBtn.disabled = true;
                     }
 
                     saveBtn.addEventListener('click', () => {
-                        const liters = document.getElementById('liters').value;
+                        const liters = litersInput.value;
                         
                         if(!liters || liters <= 0) {
                             alert("Por favor, introduce una cantidad válida.");
@@ -53,26 +62,32 @@
 
                         saveBtn.disabled = true;
                         msg.style.color = "orange";
-                        msg.innerText = "⏳ Enviando datos a Geotab...";
+                        msg.innerText = "⏳ Guardando en Geotab...";
 
-                        // Guardamos el registro en la sección de Mantenimiento de Geotab
+                        // Guardamos el registro. Usamos un ID de tipo estándar para evitar errores de permisos.
                         api.call("Add", {
-    typeName: "MaintenanceRecord",
-    entity: {
-        device: { id: device.id },
-        // En lugar de un ID fijo que puede fallar, usamos el nombre del tipo
-        maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" }, 
-        notes: `REPOSTAJE ADBLUE: ${liters} Litros`,
-        dateTime: new Date().toISOString()
-    }
-}, () => {
-    // ... éxito ...
-}, (err) => {
-    console.error(err);
-    // Esto mostrará el texto real del error en lugar de [object Object]
-    msg.innerText = "❌ Error: " + (err.message || "Consulte la consola");
-});
+                            typeName: "MaintenanceRecord",
+                            entity: {
+                                device: { id: device.id },
+                                maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" }, // ID universal compatible
+                                notes: `REPOSTAJE ADBLUE: ${liters} Litros (Registrado vía Add-in)`,
+                                dateTime: new Date().toISOString()
+                            }
+                        }, () => {
+                            msg.style.color = "green";
+                            msg.innerText = "✅ ¡Registro guardado con éxito!";
+                            litersInput.value = "";
+                            saveBtn.disabled = false;
+                        }, (err) => {
+                            msg.style.color = "red";
+                            // Capturamos el error real en lugar de mostrar [object Object]
+                            console.error("Error Geotab API:", err);
+                            msg.innerText = "❌ Error: " + (err.message || "No se pudo guardar.");
+                            saveBtn.disabled = false;
+                        });
                     });
+
+                    // Obligatorio llamar al callback al finalizar la inicialización
                     callback();
                 }
             };
@@ -80,8 +95,3 @@
     </script>
 </body>
 </html>
-</body>
-
-</html>
-
-
