@@ -30,7 +30,7 @@
 
     <script>
         // Esta función es la que Geotab llama automáticamente
-        geotab.addin.drive = (api, state) => {
+        geotab.addin.registroAdBlue = (api, state) => {
             const vehicleEl = document.getElementById('vehicleInfo');
             const saveBtn = document.getElementById('saveBtn');
             const msg = document.getElementById('msg');
@@ -57,23 +57,21 @@
 
                         // Guardamos el registro en la sección de Mantenimiento de Geotab
                         api.call("Add", {
-                            typeName: "MaintenanceRecord",
-                            entity: {
-                                device: { id: device.id },
-                                maintenanceType: { id: "ai78" }, // ID de tipo fluido/mantenimiento
-                                notes: `REPOSTAJE ADBLUE: ${liters} Litros`,
-                                dateTime: new Date().toISOString()
-                            }
-                        }, () => {
-                            msg.style.color = "green";
-                            msg.innerText = "✅ ¡Registro guardado con éxito!";
-                            document.getElementById('liters').value = "";
-                            saveBtn.disabled = false;
-                        }, (err) => {
-                            msg.style.color = "red";
-                            msg.innerText = "❌ Error al guardar: " + err;
-                            saveBtn.disabled = false;
-                        });
+    typeName: "MaintenanceRecord",
+    entity: {
+        device: { id: device.id },
+        // En lugar de un ID fijo que puede fallar, usamos el nombre del tipo
+        maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" }, 
+        notes: `REPOSTAJE ADBLUE: ${liters} Litros`,
+        dateTime: new Date().toISOString()
+    }
+}, () => {
+    // ... éxito ...
+}, (err) => {
+    console.error(err);
+    // Esto mostrará el texto real del error en lugar de [object Object]
+    msg.innerText = "❌ Error: " + (err.message || "Consulte la consola");
+});
                     });
                     callback();
                 }
@@ -85,3 +83,4 @@
 </body>
 
 </html>
+
