@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Registro AdBlue</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        input { padding: 15px; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; }
+        button { padding: 15px; font-size: 18px; background: #004a99; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .status { font-weight: bold; color: green; }
+    </style>
+</head>
+<body>
+    <h3>Registrar AdBlue</h3>
+    <p id="vehicleInfo">Detectando vehículo...</p>
+    
+    <label for="liters">Litros añadidos:</label>
+    <input type="number" id="liters" placeholder="Ej: 10" inputmode="decimal">
+    
+    <button id="saveBtn">Guardar Repostaje</button>
+    <p id="msg" class="status"></p>
+
+    <script>
+        geotab.addin.drive = (api, state) => {
+            const vehicleEl = document.getElementById('vehicleInfo');
+            const saveBtn = document.getElementById('saveBtn');
+            const msg = document.getElementById('msg');
+
+            // 1. Detectar automáticamente el vehículo actual
+            const device = state.device || { name: "Desconocido" };
+            vehicleEl.innerText = "Vehículo: " + device.name;
+
+            return {
+                initialize(api, state, callback) {
+                    saveBtn.addEventListener('click', () => {
+                        const liters = document.getElementById('liters').value;
+                        if(!liters) return alert("Indica los litros");
+
+                        saveBtn.disabled = true;
+                        msg.innerText = "Guardando...";
+
+                        // 2. Enviar los datos a MyGeotab como registro de mantenimiento
+                        api.call("Add", {
+                            typeName: "MaintenanceRecord",
+                            entity: {
+                                device: { id: device.id },
+                                maintenanceType: { id: "ai78" }, // ID genérico, luego lo ajustaremos
+                                notes: "Repostaje AdBlue: " + liters + "L",
+                                dateTime: new Date().toISOString()
+                            }
+                        }, () => {
+                            msg.innerText = "¡Guardado con éxito! ✅";
+                            document.getElementById('liters').value = "";
+                            saveBtn.disabled = false;
+                        }, (err) => {
+                            alert("Error: " + err);
+                            saveBtn.disabled = false;
+                        });
+                    });
+                    callback();
+                },
+                focus(api, state) { /* Se ejecuta cuando el conductor abre el addin */ },
+                blur(api, state) { /* Se ejecuta cuando lo cierra */ }
+            };
+        };
+    </script>
+</body>
+</html>
