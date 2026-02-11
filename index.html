@@ -2,67 +2,86 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro AdBlue</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        input { padding: 15px; font-size: 18px; border: 1px solid #ccc; border-radius: 8px; }
-        button { padding: 15px; font-size: 18px; background: #004a99; color: white; border: none; border-radius: 8px; cursor: pointer; }
-        .status { font-weight: bold; color: green; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background-color: #f4f7f9; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h3 { color: #004a99; margin-top: 0; }
+        .info { background: #eef4fa; padding: 10px; border-radius: 6px; font-size: 0.9em; margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; }
+        button { width: 100%; padding: 15px; font-size: 16px; background: #004a99; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        button:disabled { background: #ccc; }
+        #msg { margin-top: 15px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h3>Registrar AdBlue</h3>
-    <p id="vehicleInfo">Detectando vehículo...</p>
-    
-    <label for="liters">Litros añadidos:</label>
-    <input type="number" id="liters" placeholder="Ej: 10" inputmode="decimal">
-    
-    <button id="saveBtn">Guardar Repostaje</button>
-    <p id="msg" class="status"></p>
+    <div class="card">
+        <h3>⛽ Registro de AdBlue</h3>
+        <div id="vehicleInfo" class="info">Obteniendo información del vehículo...</div>
+        
+        <label for="liters">Litros de AdBlue añadidos:</label>
+        <input type="number" id="liters" placeholder="0.00" step="0.01" inputmode="decimal">
+        
+        <button id="saveBtn">ENVIAR REGISTRO</button>
+        <p id="msg"></p>
+    </div>
 
     <script>
+        // Esta función es la que Geotab llama automáticamente
         geotab.addin.drive = (api, state) => {
             const vehicleEl = document.getElementById('vehicleInfo');
             const saveBtn = document.getElementById('saveBtn');
             const msg = document.getElementById('msg');
 
-            // 1. Detectar automáticamente el vehículo actual
-            const device = state.device || { name: "Desconocido" };
-            vehicleEl.innerText = "Vehículo: " + device.name;
-
             return {
                 initialize(api, state, callback) {
+                    // Detectamos el vehículo actual del login del conductor
+                    const device = state.device;
+                    if (device) {
+                        vehicleEl.innerHTML = `<strong>Vehículo:</strong> ${device.name}<br><strong>ID:</strong> ${device.id}`;
+                    }
+
                     saveBtn.addEventListener('click', () => {
                         const liters = document.getElementById('liters').value;
-                        if(!liters) return alert("Indica los litros");
+                        
+                        if(!liters || liters <= 0) {
+                            alert("Por favor, introduce una cantidad válida.");
+                            return;
+                        }
 
                         saveBtn.disabled = true;
-                        msg.innerText = "Guardando...";
+                        msg.style.color = "orange";
+                        msg.innerText = "⏳ Enviando datos a Geotab...";
 
-                        // 2. Enviar los datos a MyGeotab como registro de mantenimiento
+                        // Guardamos el registro en la sección de Mantenimiento de Geotab
                         api.call("Add", {
                             typeName: "MaintenanceRecord",
                             entity: {
                                 device: { id: device.id },
-                                maintenanceType: { id: "ai78" }, // ID genérico, luego lo ajustaremos
-                                notes: "Repostaje AdBlue: " + liters + "L",
+                                maintenanceType: { id: "ai78" }, // ID de tipo fluido/mantenimiento
+                                notes: `REPOSTAJE ADBLUE: ${liters} Litros`,
                                 dateTime: new Date().toISOString()
                             }
                         }, () => {
-                            msg.innerText = "¡Guardado con éxito! ✅";
+                            msg.style.color = "green";
+                            msg.innerText = "✅ ¡Registro guardado con éxito!";
                             document.getElementById('liters').value = "";
                             saveBtn.disabled = false;
                         }, (err) => {
-                            alert("Error: " + err);
+                            msg.style.color = "red";
+                            msg.innerText = "❌ Error al guardar: " + err;
                             saveBtn.disabled = false;
                         });
                     });
                     callback();
-                },
-                focus(api, state) { /* Se ejecuta cuando el conductor abre el addin */ },
-                blur(api, state) { /* Se ejecuta cuando lo cierra */ }
+                }
             };
         };
     </script>
 </body>
+</html>
+</body>
+
 </html>
