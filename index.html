@@ -1,59 +1,505 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"></head>
-<body style="padding:20px; text-align:center; font-family:sans-serif;">
-    <div style="border:1px solid #ccc; border-radius:10px; padding:20px;">
-        <h3>⛽ Registro AdBlue</h3>
-        <p id="vId">Detectando vehículo...</p>
-        <input type="number" id="litros" placeholder="Litros" style="padding:10px; width:80%;">
-        <button id="btn" style="margin-top:10px; padding:10px; background:#004a99; color:white; border:none; width:85%;">GUARDAR</button>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control AdBlue</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .info-card {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-card h3 {
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .info-card p {
+            color: #4a5568;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group span {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #718096;
+            font-weight: 600;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border-left: 4px solid #38a169;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .alert-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border-left: 4px solid #3182ce;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .history {
+            margin-top: 30px;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 20px;
+        }
+
+        .history h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .history-item {
+            background: #f7fafc;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .history-item strong {
+            color: #2d3748;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Cargando información...</p>
+        </div>
+
+        <div id="main-content" style="display: none;">
+            <div class="header">
+                <h1>🚛 Control AdBlue</h1>
+                <p>Registro de repostaje de AdBlue</p>
+            </div>
+
+            <div id="alert" class="alert"></div>
+
+            <div class="info-card">
+                <h3>Vehículo</h3>
+                <p id="vehicle-name">-</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Conductor</h3>
+                <p id="driver-name">-</p>
+            </div>
+
+            <form id="adblue-form">
+                <div class="form-group">
+                    <label for="adblue-quantity">Cantidad de AdBlue (Litros)</label>
+                    <div class="input-group">
+                        <input 
+                            type="number" 
+                            id="adblue-quantity" 
+                            name="adblue-quantity"
+                            min="0.1" 
+                            step="0.1" 
+                            required 
+                            placeholder="Ej: 10.5"
+                        >
+                        <span>L</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="adblue-notes">Notas (Opcional)</label>
+                    <input 
+                        type="text" 
+                        id="adblue-notes" 
+                        name="adblue-notes"
+                        placeholder="Ej: Repostaje en gasolinera X"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submit-btn">
+                    Registrar AdBlue
+                </button>
+            </form>
+
+            <div class="history" id="history-section" style="display: none;">
+                <h3>Últimos registros</h3>
+                <div id="history-list"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Definición recomendada por la documentación oficial
-        window.geotab = window.geotab || {};
-        window.geotab.addin = window.geotab.addin || {};
+        // Variables globales
+        let api = null;
+        let state = null;
+        let currentDevice = null;
+        let currentDriver = null;
 
-        geotab.addin.adbluetracker = function (api, state) {
-            return {
-                initialize: function (api, state, callback) {
-                    const btn = document.getElementById('btn');
-                    const vIdTxt = document.getElementById('vId');
-                    
-                    // En Drive App, el vehículo suele estar en state.device
-                    const device = state.device || state.activeDevice;
-                    if (device) vIdTxt.innerText = "Vehículo: " + (device.name || device.id);
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, waiting for Geotab initialization...');
+        });
 
-                    btn.onclick = function() {
-                        const val = document.getElementById('litros').value;
-                        if (!device) return alert("Error: No se detecta vehículo activo.");
+        // Función de inicialización de Geotab
+        function geotabDriveAddInInit(freshApi, freshState) {
+            console.log('Geotab initialized!');
+            api = freshApi;
+            state = freshState;
 
-                        btn.disabled = true;
-                        btn.innerText = "Guardando...";
+            // Cargar información del vehículo y conductor
+            loadVehicleAndDriverInfo();
+        }
 
-                        api.call("Add", {
-                            typeName: "MaintenanceRecord",
-                            entity: {
-                                device: { id: device.id },
-                                maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" },
-                                notes: "AdBlue: " + val + "L",
-                                dateTime: new Date().toISOString()
-                            }
-                        }, function() {
-                            alert("✅ Guardado correctamente");
-                            btn.disabled = false;
-                            btn.innerText = "GUARDAR";
-                        }, function(err) {
-                            alert("Error: " + err.message);
-                            btn.disabled = false;
-                        });
-                    };
-                    callback();
-                },
-                focus: function () {},
-                blur: function () {}
-            };
-        };
+        // Cargar información del vehículo y conductor
+        async function loadVehicleAndDriverInfo() {
+            try {
+                showLoading(true);
+
+                // Obtener información del dispositivo (vehículo)
+                if (state.device && state.device.id) {
+                    const devices = await api.call('Get', {
+                        typeName: 'Device',
+                        search: {
+                            id: state.device.id
+                        }
+                    });
+
+                    if (devices && devices.length > 0) {
+                        currentDevice = devices[0];
+                        document.getElementById('vehicle-name').textContent = 
+                            currentDevice.name || currentDevice.serialNumber || 'N/A';
+                    }
+                }
+
+                // Obtener información del conductor
+                if (state.driver && state.driver.id) {
+                    const drivers = await api.call('Get', {
+                        typeName: 'User',
+                        search: {
+                            id: state.driver.id
+                        }
+                    });
+
+                    if (drivers && drivers.length > 0) {
+                        currentDriver = drivers[0];
+                        const driverName = `${currentDriver.firstName || ''} ${currentDriver.lastName || ''}`.trim() 
+                            || currentDriver.name || 'N/A';
+                        document.getElementById('driver-name').textContent = driverName;
+                    }
+                }
+
+                // Cargar historial
+                await loadHistory();
+
+                showLoading(false);
+
+            } catch (error) {
+                console.error('Error loading info:', error);
+                showAlert('Error al cargar la información. Por favor, intenta de nuevo.', 'error');
+                showLoading(false);
+            }
+        }
+
+        // Cargar historial de registros
+        async function loadHistory() {
+            try {
+                // Buscar registros de AdBlue de los últimos 30 días
+                const fromDate = new Date();
+                fromDate.setDate(fromDate.getDate() - 30);
+
+                const textMessages = await api.call('Get', {
+                    typeName: 'TextMessage',
+                    search: {
+                        deviceSearch: {
+                            id: state.device.id
+                        },
+                        fromDate: fromDate.toISOString()
+                    }
+                });
+
+                // Filtrar solo mensajes de AdBlue
+                const adblueMessages = textMessages.filter(msg => 
+                    msg.message && msg.message.includes('AdBlue:')
+                ).slice(0, 5); // Últimos 5 registros
+
+                if (adblueMessages.length > 0) {
+                    const historyList = document.getElementById('history-list');
+                    historyList.innerHTML = '';
+
+                    adblueMessages.forEach(msg => {
+                        const item = document.createElement('div');
+                        item.className = 'history-item';
+                        const date = new Date(msg.dateTime);
+                        item.innerHTML = `
+                            <strong>${date.toLocaleDateString('es-ES')}</strong> - 
+                            ${msg.message}
+                        `;
+                        historyList.appendChild(item);
+                    });
+
+                    document.getElementById('history-section').style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+
+        // Manejar envío del formulario
+        document.getElementById('adblue-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const quantity = parseFloat(document.getElementById('adblue-quantity').value);
+            const notes = document.getElementById('adblue-notes').value;
+
+            if (!quantity || quantity <= 0) {
+                showAlert('Por favor, ingresa una cantidad válida de AdBlue.', 'error');
+                return;
+            }
+
+            if (!currentDevice || !currentDriver) {
+                showAlert('No se pudo obtener la información del vehículo o conductor.', 'error');
+                return;
+            }
+
+            try {
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Registrando...';
+
+                // Crear mensaje personalizado
+                const messageText = `AdBlue: ${quantity}L${notes ? ' - ' + notes : ''}`;
+
+                // Registrar en MyGeotab usando TextMessage
+                const textMessage = {
+                    device: { id: currentDevice.id },
+                    messageContent: {
+                        message: messageText,
+                        contentType: 'Normal'
+                    },
+                    isDirectionToVehicle: false,
+                    user: { id: currentDriver.id },
+                    activeFrom: new Date().toISOString(),
+                    activeTo: new Date().toISOString()
+                };
+
+                await api.call('Add', {
+                    typeName: 'TextMessage',
+                    entity: textMessage
+                });
+
+                // También crear un CustomData para mejor trazabilidad
+                const customData = {
+                    device: { id: currentDevice.id },
+                    dateTime: new Date().toISOString(),
+                    data: JSON.stringify({
+                        type: 'adblue_refill',
+                        quantity: quantity,
+                        unit: 'liters',
+                        notes: notes,
+                        driverId: currentDriver.id,
+                        driverName: `${currentDriver.firstName || ''} ${currentDriver.lastName || ''}`.trim(),
+                        vehicleName: currentDevice.name
+                    })
+                };
+
+                try {
+                    await api.call('Add', {
+                        typeName: 'CustomData',
+                        entity: customData
+                    });
+                } catch (customDataError) {
+                    console.warn('CustomData not available or error:', customDataError);
+                }
+
+                showAlert(`¡Registro exitoso! ${quantity}L de AdBlue registrados correctamente.`, 'success');
+
+                // Limpiar formulario
+                document.getElementById('adblue-quantity').value = '';
+                document.getElementById('adblue-notes').value = '';
+
+                // Recargar historial
+                await loadHistory();
+
+            } catch (error) {
+                console.error('Error saving AdBlue record:', error);
+                showAlert('Error al registrar el AdBlue. Por favor, intenta de nuevo.', 'error');
+            } finally {
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Registrar AdBlue';
+            }
+        });
+
+        // Mostrar/ocultar loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('main-content').style.display = show ? 'none' : 'block';
+        }
+
+        // Mostrar alertas
+        function showAlert(message, type) {
+            const alertDiv = document.getElementById('alert');
+            alertDiv.textContent = message;
+            alertDiv.className = `alert alert-${type} show`;
+
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        // Función global para compatibilidad con MyGeotab
+        window.geotabDriveAddInInit = geotabDriveAddInInit;
     </script>
 </body>
 </html>
