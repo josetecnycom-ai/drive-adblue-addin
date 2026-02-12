@@ -1,188 +1,159 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control AdBlue</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #667eea;
             padding: 20px;
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
         }
 
         .container {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 30px;
+            border-radius: 15px;
+            padding: 25px;
             max-width: 500px;
             width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
+        h1 {
             color: #2d3748;
-            font-size: 28px;
-            margin-bottom: 10px;
+            font-size: 24px;
+            margin-bottom: 5px;
+            text-align: center;
         }
 
-        .header p {
+        .subtitle {
             color: #718096;
-            font-size: 14px;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 20px;
         }
 
-        .info-card {
+        .info-box {
             background: #f7fafc;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
             border-left: 4px solid #667eea;
         }
 
-        .info-card h3 {
+        .info-box h3 {
             color: #2d3748;
-            font-size: 14px;
-            margin-bottom: 8px;
-            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 5px;
         }
 
-        .info-card p {
+        .info-box p {
             color: #4a5568;
-            font-size: 16px;
-            font-weight: 500;
+            font-size: 15px;
         }
 
-        .form-group {
-            margin-bottom: 20px;
+        .form-field {
+            margin-bottom: 15px;
         }
 
-        .form-group label {
+        .form-field label {
             display: block;
             color: #2d3748;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
+            font-size: 13px;
+            margin-bottom: 5px;
+            font-weight: bold;
         }
 
-        .form-group input {
+        .form-field input {
             width: 100%;
-            padding: 12px 15px;
+            padding: 12px;
             border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            font-family: inherit;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: Arial, sans-serif;
         }
 
-        .form-group input:focus {
+        .form-field input:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .input-group {
+        .input-wrapper {
             position: relative;
         }
 
-        .input-group span {
+        .input-wrapper span {
             position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
+            right: 12px;
+            top: 12px;
             color: #718096;
-            font-weight: 600;
+            font-weight: bold;
         }
 
-        .btn {
+        button {
             width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 14px;
+            background: #667eea;
             color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        button:hover {
+            background: #5568d3;
         }
 
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.6;
+        button:disabled {
+            background: #a0aec0;
             cursor: not-allowed;
-            transform: none;
         }
 
-        .alert {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 13px;
             display: none;
         }
 
-        .alert.show {
-            display: block;
-        }
-
-        .alert-success {
+        .message.show { display: block; }
+        
+        .message.success {
             background: #c6f6d5;
             color: #22543d;
             border-left: 4px solid #38a169;
         }
 
-        .alert-error {
+        .message.error {
             background: #fed7d7;
             color: #742a2a;
             border-left: 4px solid #e53e3e;
         }
 
-        .alert-info {
-            background: #bee3f8;
-            color: #2c5282;
-            border-left: 4px solid #3182ce;
-        }
-
-        .loading {
+        .loading-screen {
             text-align: center;
             padding: 40px;
         }
 
-        .loading-spinner {
+        .spinner {
             border: 4px solid #f3f4f6;
             border-top: 4px solid #667eea;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 15px;
         }
 
         @keyframes spin {
@@ -190,420 +161,293 @@
             100% { transform: rotate(360deg); }
         }
 
-        .history {
-            margin-top: 30px;
+        .history-section {
+            margin-top: 20px;
             border-top: 2px solid #e2e8f0;
-            padding-top: 20px;
+            padding-top: 15px;
+            display: none;
         }
 
-        .history h3 {
+        .history-section h3 {
             color: #2d3748;
-            margin-bottom: 15px;
-            font-size: 18px;
+            font-size: 16px;
+            margin-bottom: 10px;
         }
 
         .history-item {
             background: #f7fafc;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-size: 13px;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 12px;
             color: #4a5568;
         }
 
         .history-item strong {
             color: #2d3748;
         }
-
-        .debug-info {
-            background: #fff5f5;
-            border: 1px solid #feb2b2;
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #742a2a;
-            display: none;
-        }
-
-        .debug-info.show {
-            display: block;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="loading" id="loading">
-            <div class="loading-spinner"></div>
-            <p>Cargando información...</p>
+        <div class="loading-screen" id="loadingScreen">
+            <div class="spinner"></div>
+            <p>Cargando...</p>
         </div>
 
-        <div id="main-content" style="display: none;">
-            <div class="header">
-                <h1>🚛 Control AdBlue</h1>
-                <p>Registro de repostaje de AdBlue</p>
+        <div id="mainContent" style="display: none;">
+            <h1>Control AdBlue</h1>
+            <p class="subtitle">Registro de repostaje</p>
+
+            <div id="messageBox" class="message"></div>
+
+            <div class="info-box">
+                <h3>Vehiculo</h3>
+                <p id="vehicleName">-</p>
             </div>
 
-            <div id="alert" class="alert"></div>
-
-            <div class="info-card">
-                <h3>Vehículo</h3>
-                <p id="vehicle-name">-</p>
-            </div>
-
-            <div class="info-card">
+            <div class="info-box">
                 <h3>Conductor</h3>
-                <p id="driver-name">-</p>
+                <p id="driverName">-</p>
             </div>
 
-            <form id="adblue-form">
-                <div class="form-group">
-                    <label for="adblue-quantity">Cantidad de AdBlue (Litros)</label>
-                    <div class="input-group">
-                        <input 
-                            type="number" 
-                            id="adblue-quantity" 
-                            name="adblue-quantity"
-                            min="0.1" 
-                            step="0.1" 
-                            required 
-                            placeholder="Ej: 10.5"
-                        >
+            <form id="adblueForm">
+                <div class="form-field">
+                    <label for="quantity">Cantidad de AdBlue (Litros)</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="quantity" min="0.1" step="0.1" required placeholder="10.5">
                         <span>L</span>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="adblue-notes">Notas (Opcional)</label>
-                    <input 
-                        type="text" 
-                        id="adblue-notes" 
-                        name="adblue-notes"
-                        placeholder="Ej: Repostaje en gasolinera X"
-                    >
+                <div class="form-field">
+                    <label for="notes">Notas (Opcional)</label>
+                    <input type="text" id="notes" placeholder="Ej: Gasolinera Shell">
                 </div>
 
-                <button type="submit" class="btn btn-primary" id="submit-btn">
-                    Registrar AdBlue
-                </button>
+                <button type="submit" id="submitBtn">Registrar AdBlue</button>
             </form>
 
-            <div class="history" id="history-section" style="display: none;">
-                <h3>Últimos registros</h3>
-                <div id="history-list"></div>
-            </div>
-
-            <div id="debug-info" class="debug-info">
-                <strong>Información de debug:</strong>
-                <div id="debug-content"></div>
+            <div class="history-section" id="historySection">
+                <h3>Ultimos registros</h3>
+                <div id="historyList"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // Variables globales
-        let api = null;
-        let state = null;
-        let currentDevice = null;
-        let currentDriver = null;
+        var api = null;
+        var state = null;
+        var currentDevice = null;
+        var currentDriver = null;
 
-        // Log para debug
-        function debugLog(message, data) {
-            console.log('[AdBlue]', message, data || '');
-            const debugDiv = document.getElementById('debug-content');
-            if (debugDiv) {
-                const timestamp = new Date().toLocaleTimeString();
-                debugDiv.innerHTML += `<br>[${timestamp}] ${message}`;
-                if (data) {
-                    debugDiv.innerHTML += `: ${JSON.stringify(data)}`;
-                }
-            }
+        function log(msg, data) {
+            console.log('[AdBlue] ' + msg, data || '');
         }
 
-        // Mostrar debug info (descomenta para activar)
-        // document.getElementById('debug-info').classList.add('show');
-
-        // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
-            debugLog('DOM cargado, esperando inicialización de Geotab');
+            log('DOM loaded');
         });
 
-        // Función de inicialización de Geotab
         function geotabDriveAddInInit(freshApi, freshState, freshCallback) {
-            debugLog('Geotab inicializado!');
-            
+            log('Init called');
             api = freshApi;
             state = freshState;
-
-            debugLog('API disponible', { hasApi: !!api });
-            debugLog('State disponible', state);
-
-            // Cargar información del vehículo y conductor
-            loadVehicleAndDriverInfo();
-
-            // Llamar al callback si existe
-            if (typeof freshCallback === 'function') {
-                freshCallback();
-            }
+            
+            log('State', state);
+            
+            loadInfo();
+            
+            if (freshCallback) freshCallback();
         }
 
-        // Cargar información del vehículo y conductor
-        async function loadVehicleAndDriverInfo() {
+        function loadInfo() {
             try {
+                log('Loading info');
                 showLoading(true);
-                debugLog('Iniciando carga de información');
 
-                // Verificar que tenemos API
                 if (!api) {
-                    throw new Error('API no disponible');
+                    throw new Error('API not available');
                 }
 
-                // Obtener información del dispositivo (vehículo)
+                var devicePromise = Promise.resolve(null);
+                var driverPromise = Promise.resolve(null);
+
                 if (state && state.device && state.device.id) {
-                    debugLog('Buscando dispositivo', { id: state.device.id });
-                    
-                    const devices = await api.call('Get', {
+                    log('Getting device', state.device.id);
+                    devicePromise = api.call('Get', {
                         typeName: 'Device',
-                        search: {
-                            id: state.device.id
-                        }
+                        search: { id: state.device.id }
                     });
-
-                    debugLog('Dispositivos encontrados', { count: devices ? devices.length : 0 });
-
-                    if (devices && devices.length > 0) {
-                        currentDevice = devices[0];
-                        const vehicleName = currentDevice.name || currentDevice.serialNumber || 'N/A';
-                        document.getElementById('vehicle-name').textContent = vehicleName;
-                        debugLog('Vehículo establecido', { name: vehicleName });
-                    }
-                } else {
-                    debugLog('No hay información de dispositivo en state');
-                    document.getElementById('vehicle-name').textContent = 'No disponible';
                 }
 
-                // Obtener información del conductor
                 if (state && state.driver && state.driver.id) {
-                    debugLog('Buscando conductor', { id: state.driver.id });
-                    
-                    const drivers = await api.call('Get', {
+                    log('Getting driver', state.driver.id);
+                    driverPromise = api.call('Get', {
                         typeName: 'User',
-                        search: {
-                            id: state.driver.id
-                        }
+                        search: { id: state.driver.id }
                     });
-
-                    debugLog('Conductores encontrados', { count: drivers ? drivers.length : 0 });
-
-                    if (drivers && drivers.length > 0) {
-                        currentDriver = drivers[0];
-                        const driverName = `${currentDriver.firstName || ''} ${currentDriver.lastName || ''}`.trim() 
-                            || currentDriver.name || 'N/A';
-                        document.getElementById('driver-name').textContent = driverName;
-                        debugLog('Conductor establecido', { name: driverName });
-                    }
-                } else {
-                    debugLog('No hay información de conductor en state');
-                    document.getElementById('driver-name').textContent = 'No disponible';
                 }
 
-                // Cargar historial
-                await loadHistory();
+                Promise.all([devicePromise, driverPromise])
+                    .then(function(results) {
+                        var devices = results[0];
+                        var drivers = results[1];
 
-                showLoading(false);
+                        if (devices && devices.length > 0) {
+                            currentDevice = devices[0];
+                            document.getElementById('vehicleName').textContent = 
+                                currentDevice.name || currentDevice.serialNumber || 'N/A';
+                            log('Device set', currentDevice.name);
+                        } else {
+                            document.getElementById('vehicleName').textContent = 'No disponible';
+                        }
+
+                        if (drivers && drivers.length > 0) {
+                            currentDriver = drivers[0];
+                            var name = (currentDriver.firstName || '') + ' ' + (currentDriver.lastName || '');
+                            name = name.trim() || currentDriver.name || 'N/A';
+                            document.getElementById('driverName').textContent = name;
+                            log('Driver set', name);
+                        } else {
+                            document.getElementById('driverName').textContent = 'No disponible';
+                        }
+
+                        return loadHistory();
+                    })
+                    .then(function() {
+                        showLoading(false);
+                    })
+                    .catch(function(error) {
+                        log('Error loading info', error);
+                        showMessage('Error al cargar informacion: ' + error.message, 'error');
+                        showLoading(false);
+                    });
 
             } catch (error) {
-                debugLog('Error cargando información', error.message);
-                console.error('Error loading info:', error);
-                showAlert('Error al cargar la información: ' + error.message, 'error');
+                log('Error in loadInfo', error);
+                showMessage('Error: ' + error.message, 'error');
                 showLoading(false);
             }
         }
 
-        // Cargar historial de registros
-        async function loadHistory() {
-            try {
-                if (!currentDevice) {
-                    debugLog('No hay dispositivo para cargar historial');
-                    return;
+        function loadHistory() {
+            if (!currentDevice) return Promise.resolve();
+
+            log('Loading history');
+
+            var fromDate = new Date();
+            fromDate.setDate(fromDate.getDate() - 30);
+
+            return api.call('Get', {
+                typeName: 'TextMessage',
+                search: {
+                    deviceSearch: { id: currentDevice.id },
+                    fromDate: fromDate.toISOString()
                 }
-
-                debugLog('Cargando historial');
-
-                // Buscar registros de AdBlue de los últimos 30 días
-                const fromDate = new Date();
-                fromDate.setDate(fromDate.getDate() - 30);
-
-                const textMessages = await api.call('Get', {
-                    typeName: 'TextMessage',
-                    search: {
-                        deviceSearch: {
-                            id: currentDevice.id
-                        },
-                        fromDate: fromDate.toISOString()
-                    }
-                });
-
-                debugLog('Mensajes encontrados', { count: textMessages ? textMessages.length : 0 });
-
-                // Filtrar solo mensajes de AdBlue
-                const adblueMessages = textMessages.filter(msg => 
-                    msg.message && msg.message.includes('AdBlue:')
-                ).slice(0, 5); // Últimos 5 registros
+            })
+            .then(function(messages) {
+                var adblueMessages = messages.filter(function(msg) {
+                    return msg.message && msg.message.indexOf('AdBlue:') !== -1;
+                }).slice(0, 5);
 
                 if (adblueMessages.length > 0) {
-                    const historyList = document.getElementById('history-list');
+                    var historyList = document.getElementById('historyList');
                     historyList.innerHTML = '';
 
-                    adblueMessages.forEach(msg => {
-                        const item = document.createElement('div');
+                    adblueMessages.forEach(function(msg) {
+                        var item = document.createElement('div');
                         item.className = 'history-item';
-                        const date = new Date(msg.dateTime);
-                        item.innerHTML = `
-                            <strong>${date.toLocaleDateString('es-ES')}</strong> - 
-                            ${msg.message}
-                        `;
+                        var date = new Date(msg.dateTime);
+                        item.innerHTML = '<strong>' + date.toLocaleDateString('es-ES') + '</strong> - ' + msg.message;
                         historyList.appendChild(item);
                     });
 
-                    document.getElementById('history-section').style.display = 'block';
-                    debugLog('Historial cargado', { items: adblueMessages.length });
+                    document.getElementById('historySection').style.display = 'block';
+                    log('History loaded', adblueMessages.length);
                 }
-
-            } catch (error) {
-                debugLog('Error cargando historial', error.message);
-                console.error('Error loading history:', error);
-            }
+            })
+            .catch(function(error) {
+                log('Error loading history', error);
+            });
         }
 
-        // Manejar envío del formulario
-        document.getElementById('adblue-form').addEventListener('submit', async function(e) {
+        document.getElementById('adblueForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const quantity = parseFloat(document.getElementById('adblue-quantity').value);
-            const notes = document.getElementById('adblue-notes').value;
+            var quantity = parseFloat(document.getElementById('quantity').value);
+            var notes = document.getElementById('notes').value;
 
-            debugLog('Formulario enviado', { quantity, notes });
+            log('Form submit', { quantity: quantity, notes: notes });
 
             if (!quantity || quantity <= 0) {
-                showAlert('Por favor, ingresa una cantidad válida de AdBlue.', 'error');
+                showMessage('Por favor ingresa una cantidad valida', 'error');
                 return;
             }
 
-            if (!currentDevice) {
-                showAlert('No se pudo obtener la información del vehículo.', 'error');
-                debugLog('Error: No hay dispositivo actual');
+            if (!currentDevice || !currentDriver) {
+                showMessage('No hay informacion de vehiculo o conductor', 'error');
                 return;
             }
 
-            if (!currentDriver) {
-                showAlert('No se pudo obtener la información del conductor.', 'error');
-                debugLog('Error: No hay conductor actual');
-                return;
-            }
+            var submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registrando...';
 
-            try {
-                const submitBtn = document.getElementById('submit-btn');
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Registrando...';
+            var messageText = 'AdBlue: ' + quantity + 'L' + (notes ? ' - ' + notes : '');
 
-                debugLog('Creando registro de AdBlue');
+            var textMessage = {
+                device: { id: currentDevice.id },
+                messageContent: {
+                    message: messageText,
+                    contentType: 'Normal'
+                },
+                isDirectionToVehicle: false,
+                user: { id: currentDriver.id },
+                activeFrom: new Date().toISOString(),
+                activeTo: new Date().toISOString()
+            };
 
-                // Crear mensaje personalizado
-                const messageText = `AdBlue: ${quantity}L${notes ? ' - ' + notes : ''}`;
+            log('Sending TextMessage', textMessage);
 
-                // Registrar en MyGeotab usando TextMessage
-                const textMessage = {
-                    device: { id: currentDevice.id },
-                    messageContent: {
-                        message: messageText,
-                        contentType: 'Normal'
-                    },
-                    isDirectionToVehicle: false,
-                    user: { id: currentDriver.id },
-                    activeFrom: new Date().toISOString(),
-                    activeTo: new Date().toISOString()
-                };
-
-                debugLog('Enviando TextMessage', textMessage);
-
-                await api.call('Add', {
-                    typeName: 'TextMessage',
-                    entity: textMessage
-                });
-
-                debugLog('TextMessage creado exitosamente');
-
-                // También crear un CustomData para mejor trazabilidad
-                try {
-                    const customData = {
-                        device: { id: currentDevice.id },
-                        dateTime: new Date().toISOString(),
-                        data: JSON.stringify({
-                            type: 'adblue_refill',
-                            quantity: quantity,
-                            unit: 'liters',
-                            notes: notes,
-                            driverId: currentDriver.id,
-                            driverName: `${currentDriver.firstName || ''} ${currentDriver.lastName || ''}`.trim(),
-                            vehicleName: currentDevice.name
-                        })
-                    };
-
-                    debugLog('Enviando CustomData', customData);
-
-                    await api.call('Add', {
-                        typeName: 'CustomData',
-                        entity: customData
-                    });
-
-                    debugLog('CustomData creado exitosamente');
-                } catch (customDataError) {
-                    debugLog('CustomData no disponible o error', customDataError.message);
-                    console.warn('CustomData not available or error:', customDataError);
-                }
-
-                showAlert(`¡Registro exitoso! ${quantity}L de AdBlue registrados correctamente.`, 'success');
-
-                // Limpiar formulario
-                document.getElementById('adblue-quantity').value = '';
-                document.getElementById('adblue-notes').value = '';
-
-                // Recargar historial
-                await loadHistory();
-
-            } catch (error) {
-                debugLog('Error guardando registro', error.message);
-                console.error('Error saving AdBlue record:', error);
-                showAlert('Error al registrar el AdBlue: ' + error.message, 'error');
-            } finally {
-                const submitBtn = document.getElementById('submit-btn');
+            api.call('Add', {
+                typeName: 'TextMessage',
+                entity: textMessage
+            })
+            .then(function() {
+                log('TextMessage created');
+                showMessage('Registro exitoso! ' + quantity + 'L de AdBlue registrados', 'success');
+                document.getElementById('quantity').value = '';
+                document.getElementById('notes').value = '';
+                return loadHistory();
+            })
+            .catch(function(error) {
+                log('Error saving', error);
+                showMessage('Error al registrar: ' + error.message, 'error');
+            })
+            .finally(function() {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Registrar AdBlue';
-            }
+            });
         });
 
-        // Mostrar/ocultar loading
         function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-            document.getElementById('main-content').style.display = show ? 'none' : 'block';
+            document.getElementById('loadingScreen').style.display = show ? 'block' : 'none';
+            document.getElementById('mainContent').style.display = show ? 'none' : 'block';
         }
 
-        // Mostrar alertas
-        function showAlert(message, type) {
-            const alertDiv = document.getElementById('alert');
-            alertDiv.textContent = message;
-            alertDiv.className = `alert alert-${type} show`;
-
-            setTimeout(() => {
-                alertDiv.classList.remove('show');
+        function showMessage(text, type) {
+            var msgBox = document.getElementById('messageBox');
+            msgBox.textContent = text;
+            msgBox.className = 'message ' + type + ' show';
+            
+            setTimeout(function() {
+                msgBox.classList.remove('show');
             }, 5000);
         }
 
-        // Función global para compatibilidad con MyGeotab
         window.geotabDriveAddInInit = geotabDriveAddInInit;
-
-        debugLog('Script cargado completamente');
+        log('Script loaded');
     </script>
 </body>
 </html>
