@@ -24,28 +24,23 @@
 
     <script>
         // NOMBRE CLAVE: Debe coincidir EXACTAMENTE con el JSON
-        geotab.addin.adblue_reinicio = function (api, state) {
-            
-            // Variable para guardar el ID del vehículo
-            let currentDeviceId = null;
-
-            return {
-                /**
-                 * Inicialización: Se ejecuta una sola vez al cargar.
-                 */
-                initialize: function (api, state, callback) {
-                    const btn = document.getElementById('btn-enviar');
-                    const info = document.getElementById('vehiculo-info');
-                    
-                    // Intentamos detectar el vehículo al inicio
-                    if (state.device && state.device.id) {
-                        currentDeviceId = state.device.id;
-                        info.innerHTML = "✅ Vehículo: <strong>" + state.device.name + "</strong> (" + currentDeviceId + ")";
-                        btn.disabled = false;
-                        btn.innerText = "GUARDAR REGISTRO";
-                    } else {
-                        info.innerText = "⚠️ No se detecta vehículo activo.";
-                    }
+       geotab.addin.adblue_test_final = function (api, state) { 
+    
+    // ... resto del código igual que la última versión ...
+    
+    return {
+        initialize: function (api, state, callback) {
+            // ... tu código ...
+            callback();
+        },
+        focus: function (api, state) {
+            console.log("Foco recibido");
+        },
+        blur: function (api, state) {
+            console.log("Blur recibido");
+        }
+    };
+};
 
                     // Lógica del botón
                     btn.addEventListener('click', function() {
@@ -116,3 +111,4 @@
     </script>
 </body>
 </html>
+
