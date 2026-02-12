@@ -2,31 +2,32 @@
 <html>
 <head><meta charset="utf-8"></head>
 <body style="padding:20px; text-align:center; font-family:sans-serif;">
-    <div style="border:1px solid #ccc; border-radius:10px; padding:20px; background: white;">
-        <h2 style="color:#004a99;">⛽ Registro AdBlue</h2>
-        <p id="vId" style="font-weight:bold;">Detectando vehículo...</p>
-        <input type="number" id="litros" placeholder="Litros" style="padding:15px; width:80%; font-size:16px; margin-bottom:10px;">
-        <br>
-        <button id="btn" style="padding:15px; background:#004a99; color:white; border:none; width:85%; font-size:16px; border-radius:5px;">
-            GUARDAR
-        </button>
+    <div style="border:1px solid #ccc; border-radius:10px; padding:20px;">
+        <h3>⛽ Registro AdBlue</h3>
+        <p id="vId">Detectando vehículo...</p>
+        <input type="number" id="litros" placeholder="Litros" style="padding:10px; width:80%;">
+        <button id="btn" style="margin-top:10px; padding:10px; background:#004a99; color:white; border:none; width:85%;">GUARDAR</button>
     </div>
 
     <script>
-        // Geotab convierte el "name" del JSON a minúsculas y quita espacios para la función
-        geotab.addin.AdBlueTracker = function (api, state) {
+        // Definición recomendada por la documentación oficial
+        window.geotab = window.geotab || {};
+        window.geotab.addin = window.geotab.addin || {};
+
+        geotab.addin.adbluetracker = function (api, state) {
             return {
                 initialize: function (api, state, callback) {
                     const btn = document.getElementById('btn');
                     const vIdTxt = document.getElementById('vId');
+                    
+                    // En Drive App, el vehículo suele estar en state.device
                     const device = state.device || state.activeDevice;
-
                     if (device) vIdTxt.innerText = "Vehículo: " + (device.name || device.id);
 
                     btn.onclick = function() {
                         const val = document.getElementById('litros').value;
-                        if (!val) return alert("Introduce los litros");
-                        
+                        if (!device) return alert("Error: No se detecta vehículo activo.");
+
                         btn.disabled = true;
                         btn.innerText = "Guardando...";
 
@@ -39,14 +40,12 @@
                                 dateTime: new Date().toISOString()
                             }
                         }, function() {
-                            alert("✅ ¡Guardado con éxito!");
+                            alert("✅ Guardado correctamente");
                             btn.disabled = false;
                             btn.innerText = "GUARDAR";
-                            document.getElementById('litros').value = "";
                         }, function(err) {
-                            alert("❌ Error: " + err.message);
+                            alert("Error: " + err.message);
                             btn.disabled = false;
-                            btn.innerText = "GUARDAR";
                         });
                     };
                     callback();
