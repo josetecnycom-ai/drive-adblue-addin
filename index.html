@@ -2,113 +2,50 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Registro AdBlue</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
-        .container { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
-        h2 { color: #004a99; margin-top: 0; }
-        input { width: 90%; padding: 10px; margin: 15px 0; font-size: 18px; border: 1px solid #ccc; border-radius: 5px; }
-        button { width: 100%; padding: 15px; background: #004a99; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #status { margin-top: 15px; font-weight: bold; color: #555; }
-    </style>
+    <title>AdBlue</title>
 </head>
-<body>
-    <div class="container">
-        <h2>⛽ Carga de AdBlue</h2>
-        <div id="vehiculo-info">Buscando vehículo...</div>
-        <input type="number" id="litros" placeholder="Introduce litros" step="0.1">
-        <button id="btn-enviar" disabled>ESPERANDO...</button>
-        <div id="status"></div>
+<body style="font-family:sans-serif; text-align:center; padding:20px;">
+    <div style="border:1px solid #ccc; padding:20px; border-radius:10px;">
+        <h3>⛽ Registro AdBlue</h3>
+        <p id="vId">Esperando vehículo...</p>
+        <input type="number" id="litros" placeholder="Litros" style="padding:10px; width:80%;">
+        <button id="btn" style="margin-top:10px; padding:10px 20px; background:#004a99; color:white; border:none; border-radius:5px;">GUARDAR</button>
     </div>
 
     <script>
-        // NOMBRE CLAVE: Debe coincidir EXACTAMENTE con el JSON
-       geotab.addin.adblue_test_final = function (api, state) { 
-    
-    // ... resto del código igual que la última versión ...
-    
-    return {
-        initialize: function (api, state, callback) {
-            // ... tu código ...
-            callback();
-        },
-        focus: function (api, state) {
-            console.log("Foco recibido");
-        },
-        blur: function (api, state) {
-            console.log("Blur recibido");
-        }
-    };
-};
+        geotab.addin.adblue_v5 = function (api, state) {
+            return {
+                initialize: function (api, state, callback) {
+                    const btn = document.getElementById('btn');
+                    const vIdTxt = document.getElementById('vId');
+                    
+                    // b137 o similar
+                    const device = state.device || state.activeDevice;
 
-                    // Lógica del botón
-                    btn.addEventListener('click', function() {
-                        const litros = document.getElementById('litros').value;
-                        
-                        if (!litros || !currentDeviceId) {
-                            alert("Faltan litros o vehículo.");
-                            return;
-                        }
+                    if (device) {
+                        vIdTxt.innerText = "Vehículo: " + (device.name || device.id);
+                    }
 
-                        btn.disabled = true;
-                        btn.innerText = "Guardando...";
+                    btn.onclick = function() {
+                        const val = document.getElementById('litros').value;
+                        if (!device) return alert("No hay vehículo activo");
 
-                        // Llamada a la API (Solo funciona en DriveApp/Home)
                         api.call("Add", {
                             typeName: "MaintenanceRecord",
                             entity: {
-                                device: { id: currentDeviceId },
-                                maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" }, // Usamos cambio de aceite como prueba
-                                notes: "Carga AdBlue: " + litros + " Litros",
+                                device: { id: device.id },
+                                maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" },
+                                notes: "AdBlue: " + val + "L",
                                 dateTime: new Date().toISOString()
                             }
-                        }, function success() {
-                            document.getElementById('status').innerText = "✅ Guardado correctamente.";
-                            document.getElementById('litros').value = "";
-                            btn.disabled = false;
-                            btn.innerText = "GUARDAR OTRO";
-                            
-                            // Opcional: Cerrar el add-in o notificar
-                            setTimeout(() => { document.getElementById('status').innerText = ""; }, 3000);
-
-                        }, function error(err) {
-                            console.error(err);
-                            alert("Error al guardar: " + err.message);
-                            btn.disabled = false;
-                            btn.innerText = "REINTENTAR";
-                        });
-                    });
-
+                        }, () => alert("¡Guardado!"), (e) => alert("Error: " + e.message));
+                    };
                     callback();
                 },
-
-                /**
-                 * Focus: Se ejecuta cada vez que el usuario entra al botón.
-                 * CRÍTICO para que el icono aparezca.
-                 */
-                focus: function (api, state) {
-                    console.log("AdBlue: Foco recibido");
-                    // Actualizar vehículo si cambió mientras el add-in estaba en segundo plano
-                    if (state.device && state.device.id) {
-                         const btn = document.getElementById('btn-enviar');
-                         const info = document.getElementById('vehiculo-info');
-                         currentDeviceId = state.device.id;
-                         info.innerHTML = "✅ Vehículo: <strong>" + state.device.name + "</strong> (" + currentDeviceId + ")";
-                         btn.disabled = false;
-                         btn.innerText = "GUARDAR REGISTRO";
-                    }
-                },
-
-                /**
-                 * Blur: Se ejecuta al salir. Requerido por el sistema.
-                 */
-                blur: function (api, state) {
-                    console.log("AdBlue: Segundo plano");
-                }
+                focus: function() {},
+                blur: function() {}
             };
         };
     </script>
 </body>
 </html>
-
