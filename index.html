@@ -2,48 +2,56 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AdBlue</title>
+    <title>AdBlue Sygic Style</title>
 </head>
-<body style="font-family:sans-serif; text-align:center; padding:20px;">
-    <div style="border:1px solid #ccc; padding:20px; border-radius:10px;">
-        <h3>⛽ Registro AdBlue</h3>
-        <p id="vId">Esperando vehículo...</p>
-        <input type="number" id="litros" placeholder="Litros" style="padding:10px; width:80%;">
-        <button id="btn" style="margin-top:10px; padding:10px 20px; background:#004a99; color:white; border:none; border-radius:5px;">GUARDAR</button>
+<body style="font-family: Arial; padding: 20px; text-align: center;">
+    <div style="border: 1px solid #ccc; padding: 20px; border-radius: 8px;">
+        <h2>⛽ Carga AdBlue</h2>
+        <p id="v-info">Detectando vehículo...</p>
+        <input type="number" id="litros" placeholder="Litros" style="width: 80%; padding: 10px; margin: 10px 0;">
+        <button id="btn-save" style="width: 85%; padding: 15px; background: #004a99; color: white; border: none; border-radius: 5px; font-weight: bold;">GUARDAR</button>
     </div>
 
     <script>
-        geotab.addin.adblue_v5 = function (api, state) {
+        geotab.addin.adblue_sygic_style = function (api, state) {
             return {
                 initialize: function (api, state, callback) {
-                    const btn = document.getElementById('btn');
-                    const vIdTxt = document.getElementById('vId');
-                    
-                    // b137 o similar
+                    const btn = document.getElementById('btn-save');
+                    const info = document.getElementById('v-info');
                     const device = state.device || state.activeDevice;
 
                     if (device) {
-                        vIdTxt.innerText = "Vehículo: " + (device.name || device.id);
+                        info.innerHTML = "Vehículo: <b>" + (device.name || device.id) + "</b>";
                     }
 
-                    btn.onclick = function() {
-                        const val = document.getElementById('litros').value;
-                        if (!device) return alert("No hay vehículo activo");
+                    btn.addEventListener('click', function() {
+                        const litros = document.getElementById('litros').value;
+                        if (!litros || !device) return alert("Faltan datos");
+
+                        btn.disabled = true;
+                        btn.innerText = "Enviando...";
 
                         api.call("Add", {
                             typeName: "MaintenanceRecord",
                             entity: {
                                 device: { id: device.id },
                                 maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" },
-                                notes: "AdBlue: " + val + "L",
+                                notes: "Carga AdBlue: " + litros + "L",
                                 dateTime: new Date().toISOString()
                             }
-                        }, () => alert("¡Guardado!"), (e) => alert("Error: " + e.message));
-                    };
+                        }, function() {
+                            alert("¡Guardado con éxito!");
+                            btn.disabled = false;
+                            btn.innerText = "GUARDAR";
+                        }, function(err) {
+                            alert("Error: " + err.message);
+                            btn.disabled = false;
+                        });
+                    });
                     callback();
                 },
-                focus: function() {},
-                blur: function() {}
+                focus: function (api, state) {},
+                blur: function (api, state) {}
             };
         };
     </script>
