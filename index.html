@@ -10,81 +10,81 @@
     <div style="background: white; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
         <h2 style="color: #004a99;">⛽ Carga AdBlue</h2>
         
-        <div id="vehicle-info" style="margin-bottom: 15px; color: #555; font-weight: bold;">Detectando vehículo...</div>
+        <div id="vehicle-info" style="margin-bottom: 10px; color: #555; font-weight: bold;">Cargando...</div>
+        <div id="user-info" style="margin-bottom: 20px; color: #888; font-size: 12px;">Usuario: ...</div>
 
         <input type="number" id="litros" placeholder="Litros (Ej: 20)" style="width: 100%; padding: 10px; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px;">
 
         <button id="btn-save" style="width: 100%; padding: 15px; background-color: #004a99; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer;">
-            GUARDAR REGISTRO
+            ENVIAR REPORTE
         </button>
 
-        <div id="console-log" style="margin-top: 20px; font-size: 12px; color: #888; text-align: left; background: #eee; padding: 10px; border-radius: 5px; min-height: 40px; word-wrap: break-word;">
-            Esperando acción...
+        <div id="console-log" style="margin-top: 20px; font-size: 11px; color: #888; text-align: left; background: #eee; padding: 10px; border-radius: 5px; overflow-wrap: break-word;">
+            Listo para enviar.
         </div>
     </div>
 
     <script>
-        // ¡IMPORTANTE! El nombre aquí AHORA coincide con tu JSON ("path": "DriveAppLink/")
         geotab.addin.driveAppLink = function (api, state) {
             
             return {
                 initialize: function (api, state, callback) {
                     
                     var vehicleInfo = document.getElementById('vehicle-info');
+                    var userInfo = document.getElementById('user-info');
                     var consoleLog = document.getElementById('console-log');
                     var btn = document.getElementById('btn-save');
                     
-                    // 1. Obtener el vehículo actual
+                    // 1. Obtener Vehículo y Usuario (CRUCIAL)
                     var device = state.device || state.activeDevice;
+                    var user = state.user; // ¡Aquí está la clave!
                     
                     if (device) {
                         vehicleInfo.innerText = "Vehículo: " + (device.name || device.id);
-                        consoleLog.innerText = "Sistema listo. Vehículo detectado: " + device.id;
                     } else {
-                        vehicleInfo.innerText = "⚠️ Vehículo no detectado";
-                        consoleLog.innerText = "Error: No se detecta el ID del vehículo en el estado.";
+                        vehicleInfo.innerText = "⚠️ Error: Sin Vehículo";
+                    }
+
+                    if (user) {
+                        userInfo.innerText = "Conductor: " + (user.name || user.email || user.id);
+                    } else {
+                        userInfo.innerText = "⚠️ Error: Usuario no identificado";
                     }
 
                     // 2. Acción del botón
                     btn.onclick = function () {
                         var litros = document.getElementById('litros').value;
                         
-                        if (!litros) {
-                            alert("Por favor, introduce la cantidad de litros.");
-                            return;
-                        }
-
-                        if (!device) {
-                            alert("No se puede guardar: No hay vehículo identificado.");
-                            return;
-                        }
+                        if (!litros) { alert("Indica los litros."); return; }
+                        if (!device || !user) { alert("Faltan datos de vehículo o usuario."); return; }
 
                         btn.disabled = true;
-                        btn.innerText = "Guardando...";
-                        consoleLog.innerText = "Enviando datos al servidor...";
+                        btn.innerText = "Enviando...";
+                        consoleLog.innerText = "Enviando mensaje de texto...";
 
-                        // 3. Crear el objeto de ANOTACIÓN (Más sencillo que un mensaje)
-                        var note = {
-                            typeName: "Annotation",
+                        // 3. Objeto TextMessage COMPLETO (Con usuario)
+                        var message = {
+                            typeName: "TextMessage",
                             entity: {
-                                comment: "ADBLUE CARGADO: " + litros + " Litros",
-                                dateTime: new Date().toISOString(),
-                                device: { id: device.id }
+                                device: { id: device.id },
+                                user: { id: user.id }, // ¡ESTO FALTABA ANTES!
+                                isDirectionToVehicle: false, // false = Del conductor a la base
+                                messageContent: "CARGA ADBLUE: " + litros + " L",
+                                dateTime: new Date().toISOString()
                             }
                         };
 
                         // 4. Llamada a la API
-                        api.call("Add", note, function (result) {
-                            // Éxito
-                            consoleLog.innerText = "✅ ÉXITO. ID de registro: " + result;
-                            alert("¡Registro guardado correctamente!");
+                        api.call("Add", message, function (result) {
+                            consoleLog.innerText = "✅ ENVIADO. ID: " + result;
+                            alert("¡Reporte enviado a la central!");
                             document.getElementById('litros').value = "";
-                            btn.innerText = "GUARDAR REGISTRO";
+                            btn.innerText = "ENVIAR REPORTE";
                             btn.disabled = false;
                         }, function (error) {
-                            // Error
-                            consoleLog.innerText = "❌ ERROR: " + JSON.stringify(error);
-                            alert("Error al guardar: " + error.message);
+                            consoleLog.innerText = "❌ ERROR: " + (error.message || JSON.stringify(error));
+                            // Si falla, intentamos ver el error completo
+                            console.error(error);
                             btn.innerText = "REINTENTAR";
                             btn.disabled = false;
                         });
@@ -92,16 +92,8 @@
 
                     callback();
                 },
-
-                focus: function (api, state) {
-                    // Se ejecuta cuando el usuario vuelve a la pantalla
-                    console.log("AdBlue Addin Focused");
-                },
-
-                blur: function (api, state) {
-                    // Se ejecuta cuando el usuario sale
-                    console.log("AdBlue Addin Blurred");
-                }
+                focus: function () {},
+                blur: function () {}
             };
         };
     </script>
