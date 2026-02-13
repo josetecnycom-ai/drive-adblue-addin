@@ -6,21 +6,12 @@
     <title>AdBlue Tracker</title>
 </head>
 <body style="padding:20px; text-align:center; font-family:sans-serif; background-color:#f5f5f5;">
-    
     <div style="border:1px solid #ccc; border-radius:10px; padding:20px; background: white; max-width: 400px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <h2 style="color:#004a99; margin-top:0;">⛽ Carga AdBlue</h2>
-        
-        <div id="vId" style="font-weight:bold; color: #555; margin-bottom: 15px; padding: 10px; background: #eef; border-radius: 5px;">
-            Detectando vehículo...
-        </div>
-
-        <input type="number" id="litros" placeholder="Litros (ej: 20)" style="padding:15px; width:100%; box-sizing:border-box; font-size:18px; margin-bottom:15px; border: 1px solid #ddd; border-radius: 5px; text-align: center;">
-        
-        <button id="btn" style="padding:15px; background:#004a99; color:white; border:none; width:100%; font-size:16px; border-radius:5px; font-weight: bold; cursor: pointer;">
-            GUARDAR
-        </button>
-
-        <p id="status" style="margin-top:15px; font-size:12px; color:grey; min-height: 20px;"></p>
+        <div id="vId" style="font-weight:bold; color: #555; margin-bottom: 15px; padding: 10px; background: #eef; border-radius: 5px;">Detectando vehículo...</div>
+        <input type="number" id="litros" placeholder="Litros cargados" style="padding:15px; width:100%; box-sizing:border-box; font-size:18px; margin-bottom:15px; border: 1px solid #ddd; border-radius: 5px; text-align: center;">
+        <button id="btn" style="padding:15px; background:#004a99; color:white; border:none; width:100%; font-size:16px; border-radius:5px; font-weight: bold; cursor: pointer;">GUARDAR REGISTRO</button>
+        <p id="status" style="margin-top:15px; font-size:12px; color:grey;"></p>
     </div>
 
     <script>
@@ -28,59 +19,37 @@
             return {
                 initialize: function (api, state, callback) {
                     const btn = document.getElementById('btn');
-                    const vIdTxt = document.getElementById('vId');
                     const statusTxt = document.getElementById('status');
-                    
                     const device = state.device || state.activeDevice;
-                    if (device) {
-                        vIdTxt.innerText = "Vehículo: " + (device.name || device.id);
-                    }
+
+                    if (device) document.getElementById('vId').innerText = "Vehículo: " + (device.name || device.id);
 
                     btn.onclick = function() {
                         const val = document.getElementById('litros').value;
-                        if (!val || !device) { alert("Datos incompletos"); return; }
+                        if (!val || !device) { alert("Error: No hay datos o vehículo"); return; }
 
                         btn.disabled = true;
                         btn.innerText = "Enviando...";
-                        statusTxt.innerText = "Iniciando conexión segura...";
-
-                        // Forzamos un timeout por si el getSession se queda dormido
-                        const timer = setTimeout(() => {
-                            if(btn.disabled) {
-                                alert("La conexión está tardando demasiado. Reintenta.");
-                                location.reload();
+                        
+                        // ENVIAMOS EL DATO COMO TELEMETRÍA (StatusData)
+                        // Usamos el ID estándar de nivel de AdBlue
+                        api.call("Add", {
+                            typeName: "StatusData",
+                            entity: {
+                                device: { id: device.id },
+                                diagnostic: { id: "DiagnosticAdBlueLevelId" }, 
+                                data: parseFloat(val),
+                                dateTime: new Date().toISOString()
                             }
-                        }, 10000);
-
-                        api.getSession(function(session) {
-                            clearTimeout(timer);
-                            statusTxt.innerText = "Conexión establecida. Registrando...";
-
-                            // Creamos la API independiente
-                            const tunnelApi = new geotab.api(function (authCallback) {
-                                authCallback(session.userName, session.sessionId, session.database);
-                            }, { server: session.server, ssl: true });
-
-                            tunnelApi.call("Add", {
-                                typeName: "MaintenanceRecord",
-                                entity: {
-                                    device: { id: device.id },
-                                    maintenanceType: { id: "KnownIdMaintenanceTypeOilChangeId" },
-                                    notes: "AdBlue Carga: " + val + " Litros",
-                                    dateTime: new Date().toISOString()
-                                }
-                            }, function (result) {
-                                statusTxt.innerText = "¡Hecho!";
-                                alert("✅ REGISTRO GUARDADO\nID: " + result);
-                                document.getElementById('litros').value = "";
-                                btn.disabled = false;
-                                btn.innerText = "GUARDAR";
-                            }, function (error) {
-                                alert("Error API: " + error.message);
-                                btn.disabled = false;
-                                btn.innerText = "REINTENTAR";
-                            });
-
+                        }, function (result) {
+                            alert("✅ Registro guardado como Dato de Motor");
+                            document.getElementById('litros').value = "";
+                            btn.disabled = false;
+                            btn.innerText = "GUARDAR REGISTRO";
+                        }, function (error) {
+                            alert("Fallo de comunicación: " + error.message);
+                            btn.disabled = false;
+                            btn.innerText = "REINTENTAR";
                         });
                     };
                     callback();
