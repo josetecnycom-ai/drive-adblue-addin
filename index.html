@@ -3,69 +3,104 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdBlue</title>
+    <title>AdBlue Registro</title>
 </head>
-<body style="padding:10px; text-align:center; font-family:sans-serif; background:#f4f7f9;">
-    <div style="background:white; border-radius:12px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.1); max-width:350px; margin:auto;">
-        <h2 style="color:#004a99; margin-bottom:5px;">⛽ Registro AdBlue</h2>
-        <p id="vName" style="font-weight:bold; color:#666; font-size:14px; margin-bottom:20px;">Cargando vehículo...</p>
+<body style="font-family: Arial, sans-serif; padding: 20px; text-align: center; background-color: #f4f4f4;">
 
-        <input type="number" id="litros" placeholder="Litros" style="width:80%; padding:15px; font-size:24px; border:2px solid #ddd; border-radius:8px; text-align:center; margin-bottom:15px;">
+    <div style="background: white; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <h2 style="color: #004a99;">⛽ Carga AdBlue</h2>
         
-        <button id="btn" style="width:100%; padding:15px; background:#004a99; color:white; border:none; border-radius:8px; font-size:18px; font-weight:bold; cursor:pointer;">
+        <div id="vehicle-info" style="margin-bottom: 15px; color: #555; font-weight: bold;">Detectando vehículo...</div>
+
+        <input type="number" id="litros" placeholder="Litros (Ej: 20)" style="width: 100%; padding: 10px; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px;">
+
+        <button id="btn-save" style="width: 100%; padding: 15px; background-color: #004a99; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer;">
             GUARDAR REGISTRO
         </button>
 
-        <div id="debug" style="margin-top:20px; font-size:11px; color:#999; text-align:left; border-top:1px solid #eee; padding-top:10px; overflow-wrap: break-word;">
-            Estado: Esperando...
+        <div id="console-log" style="margin-top: 20px; font-size: 12px; color: #888; text-align: left; background: #eee; padding: 10px; border-radius: 5px; min-height: 40px; word-wrap: break-word;">
+            Esperando acción...
         </div>
     </div>
 
     <script>
-        // EL NOMBRE DEBE SER driveAppLink para que coincida con tu JSON
+        // ¡IMPORTANTE! El nombre aquí AHORA coincide con tu JSON ("path": "DriveAppLink/")
         geotab.addin.driveAppLink = function (api, state) {
+            
             return {
                 initialize: function (api, state, callback) {
-                    const btn = document.getElementById('btn');
-                    const debug = document.getElementById('debug');
-                    const vName = document.getElementById('vName');
                     
-                    // Detectar vehículo actual
-                    const device = state.device || state.activeDevice;
+                    var vehicleInfo = document.getElementById('vehicle-info');
+                    var consoleLog = document.getElementById('console-log');
+                    var btn = document.getElementById('btn-save');
+                    
+                    // 1. Obtener el vehículo actual
+                    var device = state.device || state.activeDevice;
+                    
                     if (device) {
-                        vName.innerText = "Vehículo: " + (device.name || device.id);
+                        vehicleInfo.innerText = "Vehículo: " + (device.name || device.id);
+                        consoleLog.innerText = "Sistema listo. Vehículo detectado: " + device.id;
+                    } else {
+                        vehicleInfo.innerText = "⚠️ Vehículo no detectado";
+                        consoleLog.innerText = "Error: No se detecta el ID del vehículo en el estado.";
                     }
 
-                    btn.onclick = function() {
-                        const val = document.getElementById('litros').value;
-                        if (!val) { alert("Indica los litros"); return; }
+                    // 2. Acción del botón
+                    btn.onclick = function () {
+                        var litros = document.getElementById('litros').value;
                         
+                        if (!litros) {
+                            alert("Por favor, introduce la cantidad de litros.");
+                            return;
+                        }
+
+                        if (!device) {
+                            alert("No se puede guardar: No hay vehículo identificado.");
+                            return;
+                        }
+
                         btn.disabled = true;
                         btn.innerText = "Guardando...";
-                        debug.innerText = "Enviando anotación...";
+                        consoleLog.innerText = "Enviando datos al servidor...";
 
-                        // Usamos Annotation: es el método más flexible para notas rápidas
-                        api.call("Add", {
+                        // 3. Crear el objeto de ANOTACIÓN (Más sencillo que un mensaje)
+                        var note = {
                             typeName: "Annotation",
                             entity: {
-                                comment: "CARGA ADBLUE: " + val + " Litros",
-                                device: { id: device.id },
-                                dateTime: new Date().toISOString()
+                                comment: "ADBLUE CARGADO: " + litros + " Litros",
+                                dateTime: new Date().toISOString(),
+                                device: { id: device.id }
                             }
-                        }, function(result) {
-                            debug.innerText = "✅ REGISTRADO: ID " + result;
-                            alert("¡Guardado con éxito!");
+                        };
+
+                        // 4. Llamada a la API
+                        api.call("Add", note, function (result) {
+                            // Éxito
+                            consoleLog.innerText = "✅ ÉXITO. ID de registro: " + result;
+                            alert("¡Registro guardado correctamente!");
                             document.getElementById('litros').value = "";
-                            btn.disabled = false;
                             btn.innerText = "GUARDAR REGISTRO";
-                        }, function(err) {
-                            // Si falla, mostramos el error detallado para diagnosticar
-                            debug.innerText = "❌ ERROR: " + (err.message || JSON.stringify(err));
                             btn.disabled = false;
+                        }, function (error) {
+                            // Error
+                            consoleLog.innerText = "❌ ERROR: " + JSON.stringify(error);
+                            alert("Error al guardar: " + error.message);
                             btn.innerText = "REINTENTAR";
+                            btn.disabled = false;
                         });
                     };
+
                     callback();
+                },
+
+                focus: function (api, state) {
+                    // Se ejecuta cuando el usuario vuelve a la pantalla
+                    console.log("AdBlue Addin Focused");
+                },
+
+                blur: function (api, state) {
+                    // Se ejecuta cuando el usuario sale
+                    console.log("AdBlue Addin Blurred");
                 }
             };
         };
